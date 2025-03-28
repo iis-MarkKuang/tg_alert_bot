@@ -153,7 +153,7 @@ def recur_trx_notif():
     local_time = time.localtime(current_time)
     # 提取分钟信息
     minutes = local_time.tm_min
-    if minutes == 0:
+    if minutes != 0:
         message = get_oneoff_message()
         # send_telegram_message(BOT_TOKEN, CHAT_ID, message)
         recur_trx_notif.last_heartbeat_time = current_time
@@ -258,24 +258,47 @@ def get_oneoff_message():
         all_time_trx_count = query_trx(connection, genesis_datetime, now_datetime, 'count', None, None, None)
         all_time_trx_success_count = query_trx(connection, genesis_datetime, now_datetime, 'count', 'SUCCEED', None, None)
         all_time_trx_failure_count = query_trx(connection, genesis_datetime, now_datetime, 'count', 'FAILED', None, None)
-        all_time_trx_amount = '%.2f' % (query_trx(connection, genesis_datetime, now_datetime, 'amount', 'SUCCEED', None, None) / 1000000)
+        all_time_trx_amount = format(query_trx(connection, genesis_datetime, now_datetime, 'amount', 'SUCCEED', None, None) / 1000000, ',.2f')
         one_day_gte_50_ratio = '%.1f%%' % (one_day_new_gte50_usdt_trx_count / one_day_new_trx_count * 100) if one_day_new_trx_count > 0 else 0.0
         one_day_lte_50_ratio = '%.1f%%' % (one_day_new_lt50_usdt_trx_count / one_day_new_trx_count * 100) if one_day_new_trx_count > 0 else 0.0
-        one_day_trx_amount = '%.2f' % (query_trx(connection, minus_one_day_datetime, now_datetime, 'FAILED', 'SUCCEED', None, None) / 1000000)
+        one_day_trx_amount = format(query_trx(connection, minus_one_day_datetime, now_datetime, 'FAILED', 'SUCCEED', None, None) / 1000000, ',.2f')
+
+        # resource related fields
         resource_fields = get_resources_fields()
-        alert_tron_trx_energy_net_v2(resource_fields)
-        resource_message = get_resource_msg(resource_fields)
-        alert_text = (f"GasFree Provider 过去24小时监控汇总：\r\n"
-                      f"时间区间(北京时间)：{minus_one_day_datetime_bj} 至 {now_datetime_bj} \r\n"
-                      f"交易相关 \r\n"
-                      f"  离线交易笔数 总计: {all_time_trx_count} 成功: {all_time_trx_success_count} 失败: {all_time_trx_failure_count} \r\n"
-                      f"  总计交易金额USDT: {all_time_trx_amount} \r\n"
-                      f"  24H新增离线交易笔数 总计: {one_day_new_trx_count} 成功: {one_day_success_trx_count} 失败: {one_day_failure_trx_count} \r\n"
-                      f"  24H新增交易金额USDT: {one_day_trx_amount} \r\n"
-                      f"  24H新增金额>=50USDT交易数占比: {one_day_gte_50_ratio} <50USDT交易数占比: {one_day_lte_50_ratio}\r\n"
+        # alert_tron_trx_energy_net_v2(resource_fields)
+
+
+        resource_message = get_resource_msg_simplified(resource_fields)
+
+        alert_text = (f"GasFree Provider 截止 {now_datetime_bj} 数据汇总: \r\n"
+                      f"# 整体交易数据  \r\n"
+                      f" 天交易数: {one_day_new_trx_count} (失败:{one_day_failure_trx_count}) \r\n"
+                      f" 天交易额: {one_day_trx_amount} (>50$: {one_day_gte_50_ratio}) \r\n"
+                      f" 总交易数: {all_time_trx_count} (失败:{all_time_trx_failure_count}) \r\n"
+                      f" 总交易额: {all_time_trx_amount}  \r\n"
+                      f""
+                      # # TODO to be supplied
+                      # f"# 第三方数据  \r\n"
+                      # f" 天交易数:  \r\n"
+                      # f" 天交易额: $15,848,027.38 (>50%: 72.1%) \r\n"
+                      # f" 总交易数: 2,919 (失败:0) \r\n"
+                      # f" 总交易额: $138,103,653.59  \r\n"
+                      f""
                       f"# 资源数据: \r\n"
                       f"{resource_message}"
                       )
+
+        # alert_text = (f"GasFree Provider 过去24小时监控汇总：\r\n"
+        #               f"时间区间(北京时间)：{minus_one_day_datetime_bj} 至 {now_datetime_bj} \r\n"
+        #               f"交易相关 \r\n"
+        #               f"  离线交易笔数 总计: {all_time_trx_count} 成功: {all_time_trx_success_count} 失败: {all_time_trx_failure_count} \r\n"
+        #               f"  总计交易金额USDT: {all_time_trx_amount} \r\n"
+        #               f"  24H新增离线交易笔数 总计: {one_day_new_trx_count} 成功: {one_day_success_trx_count} 失败: {one_day_failure_trx_count} \r\n"
+        #               f"  24H新增交易金额USDT: {one_day_trx_amount} \r\n"
+        #               f"  24H新增金额>=50USDT交易数占比: {one_day_gte_50_ratio} <50USDT交易数占比: {one_day_lte_50_ratio}\r\n"
+        #               f"# 资源数据: \r\n"
+        #               f"{resource_message}"
+        #               )
         return alert_text
     finally:
         if connection:
@@ -340,6 +363,12 @@ def main_trx():
             time.sleep(60)
 
 
+def get_resource_msg_simplified(res_dict):
+    return (f" 能量剩余: {res_dict['energy_remain_ratio']} (约 {res_dict['estimated_trans_with_energy_with_activation']} - {res_dict['estimated_trans_with_energy_no_activation']} 笔交易) \r\n"
+            f" 带宽剩余: {res_dict['net_remain_ratio']} (约 {res_dict['estimated_trans_with_net']} 笔交易) \r\n"
+            f" 备用金剩: {res_dict['balance']} TRX \r\n"
+    )
+
 def get_resource_msg(res_dict):
     return (f"  Tron Trx额度: {res_dict['balance']} \r\n"
             f"  剩余能量: {res_dict['energy_remaining_str']} \r\n"
@@ -351,44 +380,13 @@ def get_resource_msg(res_dict):
             f"  剩余带宽能够支持交易数量: {res_dict['estimated_trans_with_net']} \r\n")
 
 
-def send_heartbeat_resource(res_dict):
-    message = get_resource_msg(res_dict)
-    send_telegram_message(BOT_TOKEN, CHAT_ID, message)
-    logger.info("Sent heartbeat message")
-    logger.info(message)
-
-
-def main_resource():
-    while True:
-        try:
-            current_time = time.time()
-            # 将时间戳转换为本地时间元组
-            local_time = time.localtime(current_time)
-            # 提取分钟信息
-            minutes = local_time.tm_min
-            hours = local_time.tm_hour
-
-            if hours in [0, 8, 16] and minutes == 0:
-                res = get_resources_fields()
-                send_heartbeat_resource(res)
-                alert_tron_trx_energy_net_v2(res)
-            else:
-                logger.info(f"skipping since hours: {hours} and minutes: {minutes} not match sending time.")
-        except Exception as e:
-            import traceback
-            logger.error(traceback.format_exc())
-            logger.error(f"Error in main loop: {e}")
-        finally:
-            time.sleep(60)
-
-
 def get_resources_fields():
     resp = requests.get('https://apilist.tronscanapi.com/api/accountv2?address=TFNX7TKYCm1kUYDECjkrogBwYZvt69XQNy')
     resource_json = resp.json()
     res = {}
     res['balance_limit'] = 10466772977
     res['balance_remaining_ratio_float'] = resource_json['balance'] / res['balance_limit']
-    res['balance'] = '%.2f' % (resource_json['balance'] / 1000000)
+    res['balance'] = format(resource_json['balance'] / 1000000, ',.2f')
     res['energy_cost'] = resource_json['energyCost']
     res['net_cost'] = resource_json['netCost']
     res['energy_remaining'] = resource_json['bandwidth']['energyRemaining']
