@@ -127,7 +127,7 @@ def recur_trx_notif():
     # 提取分钟信息
     minutes = local_time.tm_min
     hours = local_time.tm_hour
-    if minutes == 0 and hours in [0, 6, 12, 18]:
+    if minutes == 0 and hours in [16, 22, 4, 10]:
         message = get_oneoff_message()
         send_telegram_message(BOT_TOKEN, CHAT_ID, message)
         recur_trx_notif.last_heartbeat_time = current_time
