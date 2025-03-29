@@ -1,3 +1,4 @@
+import json
 import os
 import time
 
@@ -7,6 +8,7 @@ import requests
 from dotenv import load_dotenv
 from loguru import logger
 from tenacity import retry, stop_after_attempt, wait_fixed
+from prometheus_http_client import Prometheus
 # Configs
 
 # Add file handler with daily rotation and 30 days retention
@@ -40,6 +42,7 @@ logger.info(
 
 # functions
 
+prom = Prometheus()
 
 @retry(stop=stop_after_attempt(10), wait=wait_fixed(1))
 def send_telegram_message(bot_token: str, chat_id: str, message: str):
@@ -55,6 +58,16 @@ def send_telegram_message(bot_token: str, chat_id: str, message: str):
     response.raise_for_status()
     data = response.json()
     assert data["ok"]
+
+
+def get_top_qps_endpoint_data_tuple():
+    query = 'rate(http_server_requests_seconds_count{job="gasfree-api"}[60s])'
+    res_json = json.loads(prom.query(metric=query))
+    qps_data = res_json["data"]["result"]
+    qps_data_sorted = sorted(qps_data, key=lambda x: x['value'][1], reverse=True)
+    if qps_data_sorted and len(qps_data_sorted) > 0:
+        return qps_data_sorted[0]['metric']['uri'], qps_data_sorted[0]['value'][1]
+    return None, None
 
 
 @retry(stop=stop_after_attempt(10), wait=wait_fixed(1))
@@ -99,46 +112,6 @@ def parse_tron_trx_energy_net(metrics: str) -> TronTrxEnergyNet:
     return TronTrxEnergyNet(trx, energy, net)
 
 
-def alert_tron_trx_energy_net(tron: TronTrxEnergyNet):
-    """
-    Alert if the Tron Trx, Energy or Net is below the warning threshold.
-    Only sends alerts once every 30 minutes to avoid spam.
-    :param tron: The TronTrxEnergyNet object.
-    """
-    # 使用类变量存储上次告警时间
-    if not hasattr(alert_tron_trx_energy_net, "last_alert_time"):
-        alert_tron_trx_energy_net.last_alert_time = 0
-
-    current_time = time.time()
-    # 检查是否到达发送间隔(30分钟 = 1800秒)
-    if current_time - alert_tron_trx_energy_net.last_alert_time < 1800:
-        return
-
-    alert_messages = []
-
-    if tron.trx < TRON_TRX_WARNING:
-        alert_messages.append(
-            f"⚠️ TRX余额不足! 当前: {tron.trx:.3f}, 警告阈值: {TRON_TRX_WARNING}"
-        )
-
-    if tron.energy < TRON_ENERGY_WARNING:
-        alert_messages.append(
-            f"⚠️ Energy不足! 当前: {tron.energy}, 警告阈值: {TRON_ENERGY_WARNING}"
-        )
-
-    if tron.net < TRON_NET_WARNING:
-        alert_messages.append(
-            f"⚠️ Net带宽不足! 当前: {tron.net}, 警告阈值: {TRON_NET_WARNING}"
-        )
-
-    if alert_messages:
-        alert_text = "\n".join(alert_messages)
-        # send_telegram_message(BOT_TOKEN, CHAT_ID, alert_text)
-        # 更新最后发送时间
-        alert_tron_trx_energy_net.last_alert_time = current_time
-        logger.info(f"Sent alert: {alert_text}")
-
-
 def recur_trx_notif():
     """
     Send a heartbeat message every 8 hours to indicate the script is running.
@@ -153,14 +126,15 @@ def recur_trx_notif():
     local_time = time.localtime(current_time)
     # 提取分钟信息
     minutes = local_time.tm_min
-    if minutes != 0:
+    hours = local_time.tm_hour
+    if minutes == 0 and hours in [0, 6, 12, 18]:
         message = get_oneoff_message()
-        # send_telegram_message(BOT_TOKEN, CHAT_ID, message)
+        send_telegram_message(BOT_TOKEN, CHAT_ID, message)
         recur_trx_notif.last_heartbeat_time = current_time
         logger.info("Sent heartbeat message")
         logger.info(message)
     else:
-        logger.info(f"cur min {minutes} not match, skipping")
+        logger.info(f"cur min {minutes} and hour {hours} not match send timestamp, skipping...")
 
 
 
@@ -218,29 +192,6 @@ def main():
         finally:
             time.sleep(30)
 
-def send_oneoff_tl():
-    alert_text = (f"GasFree Provider 过去24小时监控汇总：\r\n"
-                  f"时间区间(北京时间)：2025-03-14 00:00:00 至 2025-03-15 00:00:00 \r\n"
-                  f"交易相关 \r\n"
-                  f"  总计离线交易笔数: 592 \r\n"
-                  f"  总计成功固化交易笔数: 592 \r\n"
-                  f"  总计失败交易笔数: 0 \r\n"
-                  f"  总计交易金额USDT: 34221687.368928 \r\n"
-                  f"  24H新增离线交易笔数: 75 \r\n"
-                  f"  24H新增成功固化交易笔数: 75 \r\n"
-                  f"  24H新增失败交易笔数: 0 \r\n"
-                  f"  24H新增交易金额USDT: 6119604.100757 \r\n"
-                  f"服务负载相关 \r\n"
-                  f"  查询qps最高接口: /api/v1/address/ismarkedgasfree/batch \r\n"
-                  f"  当前qps: 2.07"
-                  )
-    print(BOT_TOKEN)
-    # print(CHAT_ID)
-
-    print(alert_text)
-    CHAT_ID = -4549588900
-    send_telegram_message(BOT_TOKEN, CHAT_ID, alert_text)
-
 def get_oneoff_message():
     try:
         current_time = datetime.datetime.now()
@@ -265,11 +216,12 @@ def get_oneoff_message():
 
         # resource related fields
         resource_fields = get_resources_fields()
-        # alert_tron_trx_energy_net_v2(resource_fields)
+        alert_tron_trx_energy_net_v2(resource_fields)
 
 
         resource_message = get_resource_msg_simplified(resource_fields)
 
+        top_qps_endpoint_data_tuple = get_top_qps_endpoint_data_tuple()
         alert_text = (f"GasFree Provider 截止 {now_datetime_bj} 数据汇总: \r\n"
                       f"# 整体交易数据  \r\n"
                       f" 天交易数: {one_day_new_trx_count} (失败:{one_day_failure_trx_count}) \r\n"
@@ -286,19 +238,11 @@ def get_oneoff_message():
                       f""
                       f"# 资源数据: \r\n"
                       f"{resource_message}"
+                      f"# 接口调用QPS Top1: \r\n"
+                      f"    名称: {top_qps_endpoint_data_tuple[0]}"
+                      f"    qps: {top_qps_endpoint_data_tuple[1]}"
                       )
 
-        # alert_text = (f"GasFree Provider 过去24小时监控汇总：\r\n"
-        #               f"时间区间(北京时间)：{minus_one_day_datetime_bj} 至 {now_datetime_bj} \r\n"
-        #               f"交易相关 \r\n"
-        #               f"  离线交易笔数 总计: {all_time_trx_count} 成功: {all_time_trx_success_count} 失败: {all_time_trx_failure_count} \r\n"
-        #               f"  总计交易金额USDT: {all_time_trx_amount} \r\n"
-        #               f"  24H新增离线交易笔数 总计: {one_day_new_trx_count} 成功: {one_day_success_trx_count} 失败: {one_day_failure_trx_count} \r\n"
-        #               f"  24H新增交易金额USDT: {one_day_trx_amount} \r\n"
-        #               f"  24H新增金额>=50USDT交易数占比: {one_day_gte_50_ratio} <50USDT交易数占比: {one_day_lte_50_ratio}\r\n"
-        #               f"# 资源数据: \r\n"
-        #               f"{resource_message}"
-        #               )
         return alert_text
     finally:
         if connection:
@@ -406,5 +350,4 @@ def get_resources_fields():
 
 
 if __name__ == "__main__":
-    # main_resource()
     main_trx()

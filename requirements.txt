@@ -1,4 +1,7 @@
-requests
-dotenv
-loguru
-tenacity
+# for python 3.6
+
+requests==2.27.1
+dotenv==0.9.9
+loguru==0.7.3
+tenacity==8.2.2
+prometheus-http-client==1.0.0
