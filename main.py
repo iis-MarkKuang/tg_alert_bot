@@ -226,7 +226,7 @@ def get_oneoff_message():
                       f"{resource_message}"
                       f"# 接口调用QPS Top1: \r\n"
                       f" 名称: {top_qps_endpoint_data_tuple[0]} \r\n"
-                      f" qps: {top_qps_endpoint_data_tuple[1]}"
+                      f" qps: {'%.2f' % float(top_qps_endpoint_data_tuple[1])}"
                       )
 
         return alert_text
