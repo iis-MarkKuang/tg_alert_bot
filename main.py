@@ -145,12 +145,12 @@ def alert_tron_trx_energy_net_v2(res_fields):
     :param tron: The TronTrxEnergyNet object.
     """
     # 使用类变量存储上次告警时间
-    if not hasattr(alert_tron_trx_energy_net, "last_alert_time"):
-        alert_tron_trx_energy_net.last_alert_time = 0
+    if not hasattr(alert_tron_trx_energy_net_v2, "last_alert_time"):
+        alert_tron_trx_energy_net_v2.last_alert_time = 0
 
     current_time = time.time()
     # 检查是否到达发送间隔(30分钟 = 1800秒)
-    if current_time - alert_tron_trx_energy_net.last_alert_time < 1800:
+    if current_time - alert_tron_trx_energy_net_v2.last_alert_time < 1800:
         return
 
     alert_messages = []
@@ -174,23 +174,9 @@ def alert_tron_trx_energy_net_v2(res_fields):
         alert_text = "\n".join(alert_messages)
         # send_telegram_message(BOT_TOKEN, CHAT_ID, alert_text)
         # 更新最后发送时间
-        alert_tron_trx_energy_net.last_alert_time = current_time
+        alert_tron_trx_energy_net_v2.last_alert_time = current_time
         logger.info(f"Sent alert: {alert_text}")
 
-
-def main():
-    while True:
-        try:
-            metrics = get_metrics(METRICS_URL)
-            tron = parse_tron_trx_energy_net(metrics)
-            message = f"Tron Trx: {tron.trx} Energy: {tron.energy} Net: {tron.net}"
-            logger.info(message)
-            recur_trx_notif(message)
-            alert_tron_trx_energy_net(tron)
-        except Exception as e:
-            logger.error(f"Error in main loop: {e}")
-        finally:
-            time.sleep(30)
 
 def get_oneoff_message():
     try:
@@ -239,8 +225,8 @@ def get_oneoff_message():
                       f"# 资源数据: \r\n"
                       f"{resource_message}"
                       f"# 接口调用QPS Top1: \r\n"
-                      f"    名称: {top_qps_endpoint_data_tuple[0]}"
-                      f"    qps: {top_qps_endpoint_data_tuple[1]}"
+                      f" 名称: {top_qps_endpoint_data_tuple[0]} \r\n"
+                      f" qps: {top_qps_endpoint_data_tuple[1]}"
                       )
 
         return alert_text
