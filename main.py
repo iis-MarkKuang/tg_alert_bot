@@ -128,6 +128,7 @@ def recur_trx_notif():
     minutes = local_time.tm_min
     hours = local_time.tm_hour
     if minutes == 0 and hours in [16, 22, 4, 10]:
+    # if True:
         message = get_oneoff_message()
         send_telegram_message(BOT_TOKEN, CHAT_ID, message)
         recur_trx_notif.last_heartbeat_time = current_time
@@ -172,7 +173,7 @@ def alert_tron_trx_energy_net_v2(res_fields):
 
     if alert_messages:
         alert_text = "\n".join(alert_messages)
-        # send_telegram_message(BOT_TOKEN, CHAT_ID, alert_text)
+        send_telegram_message(BOT_TOKEN, CHAT_ID, alert_text)
         # 更新最后发送时间
         alert_tron_trx_energy_net_v2.last_alert_time = current_time
         logger.info(f"Sent alert: {alert_text}")
@@ -188,17 +189,25 @@ def get_oneoff_message():
         genesis_datetime = '2025-03-04T00:00:00'
         connection = get_psql_conn()
         one_day_new_trx_count = query_trx(connection, minus_one_day_datetime, now_datetime, 'count', None, None, None)
-        one_day_success_trx_count = query_trx(connection, minus_one_day_datetime, now_datetime, 'count', 'SUCCEED', None, None)
+        # one_day_success_trx_count = query_trx(connection, minus_one_day_datetime, now_datetime, 'count', 'SUCCEED', None, None)
         one_day_failure_trx_count = query_trx(connection, minus_one_day_datetime, now_datetime, 'count', 'FAILED', None, None)
         one_day_new_gte50_usdt_trx_count = query_trx(connection, minus_one_day_datetime, now_datetime, 'count', None, 50000000, True)
         one_day_new_lt50_usdt_trx_count = query_trx(connection, minus_one_day_datetime, now_datetime, 'count', None, 50000000, False)
         all_time_trx_count = query_trx(connection, genesis_datetime, now_datetime, 'count', None, None, None)
-        all_time_trx_success_count = query_trx(connection, genesis_datetime, now_datetime, 'count', 'SUCCEED', None, None)
+        # all_time_trx_success_count = query_trx(connection, genesis_datetime, now_datetime, 'count', 'SUCCEED', None, None)
         all_time_trx_failure_count = query_trx(connection, genesis_datetime, now_datetime, 'count', 'FAILED', None, None)
         all_time_trx_amount = format(query_trx(connection, genesis_datetime, now_datetime, 'amount', 'SUCCEED', None, None) / 1000000, ',.2f')
         one_day_gte_50_ratio = '%.1f%%' % (one_day_new_gte50_usdt_trx_count / one_day_new_trx_count * 100) if one_day_new_trx_count > 0 else 0.0
-        one_day_lte_50_ratio = '%.1f%%' % (one_day_new_lt50_usdt_trx_count / one_day_new_trx_count * 100) if one_day_new_trx_count > 0 else 0.0
+        # one_day_lte_50_ratio = '%.1f%%' % (one_day_new_lt50_usdt_trx_count / one_day_new_trx_count * 100) if one_day_new_trx_count > 0 else 0.0
         one_day_trx_amount = format(query_trx(connection, minus_one_day_datetime, now_datetime, 'FAILED', 'SUCCEED', None, None) / 1000000, ',.2f')
+
+        all_time_third_party_trx_res = query_all_time_trx_cnt_rank(connection)
+        all_time_third_party_trx_res_list = list(map(lambda row: f"   公司: {row[1]}, 交易数: {row[2]}, 交易金额: {row[3]}\r\n", all_time_third_party_trx_res))
+        all_time_third_party_trx_res_str = "".join(all_time_third_party_trx_res_list)
+
+        last_day_third_party_trx_res = query_last_day_trx_cnt_rank(connection)
+        last_day_third_party_trx_res_list = list(map(lambda row: f"   公司: {row[1]}, 交易数: {row[2]}, 交易金额: {row[3]}\r\n", last_day_third_party_trx_res))
+        last_day_third_party_trx_res_str = "".join(last_day_third_party_trx_res_list)
 
         # resource related fields
         resource_fields = get_resources_fields()
@@ -216,11 +225,11 @@ def get_oneoff_message():
                       f" 总交易额: {all_time_trx_amount}  \r\n"
                       f""
                       # # TODO to be supplied
-                      # f"# 第三方数据  \r\n"
-                      # f" 天交易数:  \r\n"
-                      # f" 天交易额: $15,848,027.38 (>50%: 72.1%) \r\n"
-                      # f" 总交易数: 2,919 (失败:0) \r\n"
-                      # f" 总交易额: $138,103,653.59  \r\n"
+                      f"# 第三方数据  \r\n"
+                      f" 上线以来交易排行:  \r\n"
+                      f"{all_time_third_party_trx_res_str}"
+                      f" 过去一天交易排行:  \r\n"
+                      f"{last_day_third_party_trx_res_str}"
                       f""
                       f"# 资源数据: \r\n"
                       f"{resource_message}"
@@ -280,6 +289,150 @@ def query_trx(connection, start_time, end_time, agg_type, state, bound, gt):
         print("Error while connecting to PostgreSQL or executing query", error)
         return 0
     return row[0]
+
+
+def query_last_day_trx_cnt_rank(connection):
+    try:
+        # 连接到 PostgreSQL 数据库（假设 connection 已在外部创建）
+        cursor = connection.cursor()
+
+        # 定义完整的 SQL 查询语句（使用三引号保留 SQL 格式）
+        sql = """
+        WITH api_key_mapping (api_key, company) AS (
+            VALUES 
+                ('0d834840-9b15-46e3-9af3-5eed9cba5f5d', 'Coin Wallet'),
+                ('bb683af1-2d29-4bcb-bf28-ece532bcc5ae', 'Trigger'),
+                ('56729450-99e2-4705-b2b6-817ad3abf5d6', 'Guarda Wallet'),
+                ('ed69157d-a338-4da8-b355-641f243164cf', 'SafeWallet'),
+                ('320e4c64-ef90-49f4-b462-cc614b4263f8', 'Walletverse'),
+                ('19ebf423-1466-444e-bbc3-84be5cf2103f', 'Coinsenda'),
+                ('d2dc932a-29d4-4b56-a21a-8276a68163a4', 'BitGo'),
+                ('38df29b6-8a43-43a3-83a3-b724a8b0f10d', 'IM Token'),
+                ('d6448b6f-92e8-4865-804c-aeacdca69a0b', 'BitGet'),
+                ('d0795e19-0ba1-4e3b-bb8a-b18e2949aa78', 'Klever Wallet')
+        ),
+        stats_since_march_4 AS (
+            SELECT 
+                am.api_key,
+                am.company,
+                COUNT(go.id) AS transaction_count_since_march_4,
+                SUM(go.amount) AS transaction_amount_since_march_4
+            FROM 
+                api_key_mapping am
+            LEFT JOIN 
+                gasfree_offchains go ON am.api_key = go.api_key
+            WHERE 
+                go.created_at BETWEEN NOW() - INTERVAL '1 day' AND NOW()
+            GROUP BY 
+                am.api_key, am.company
+        )
+        SELECT 
+            api_key,
+            company,
+            transaction_count_since_march_4,
+            transaction_amount_since_march_4
+        FROM 
+            stats_since_march_4 
+        ORDER BY 
+            transaction_count_since_march_4 DESC
+        LIMIT 3;
+        """
+
+        print("执行的 SQL 语句：\n", sql)
+
+        # 执行 SQL 查询
+        cursor.execute(sql)
+
+        # 获取所有查询结果
+        results = cursor.fetchall()
+
+        # 处理结果（示例：打印每行数据）
+        for row in results:
+            print("公司名称:", row[1])
+            print("交易数:", row[2])
+            print("交易金额:", row[3])
+            print("-" * 50)
+
+        # 返回完整结果（如果需要）
+        return results
+
+    except Exception as error:
+        print("Error while connecting to PostgreSQL or executing query:", error)
+        return None  # 或根据需求返回特定值
+    finally:
+        cursor.close()
+
+
+def query_all_time_trx_cnt_rank(connection):
+    try:
+        # 连接到 PostgreSQL 数据库（假设 connection 已在外部创建）
+        cursor = connection.cursor()
+
+        # 定义完整的 SQL 查询语句（使用三引号保留 SQL 格式）
+        sql = """
+        WITH api_key_mapping (api_key, company) AS (
+            VALUES 
+                ('0d834840-9b15-46e3-9af3-5eed9cba5f5d', 'Coin Wallet'),
+                ('bb683af1-2d29-4bcb-bf28-ece532bcc5ae', 'Trigger'),
+                ('56729450-99e2-4705-b2b6-817ad3abf5d6', 'Guarda Wallet'),
+                ('ed69157d-a338-4da8-b355-641f243164cf', 'SafeWallet'),
+                ('320e4c64-ef90-49f4-b462-cc614b4263f8', 'Walletverse'),
+                ('19ebf423-1466-444e-bbc3-84be5cf2103f', 'Coinsenda'),
+                ('d2dc932a-29d4-4b56-a21a-8276a68163a4', 'BitGo'),
+                ('38df29b6-8a43-43a3-83a3-b724a8b0f10d', 'IM Token'),
+                ('d6448b6f-92e8-4865-804c-aeacdca69a0b', 'BitGet'),
+                ('d0795e19-0ba1-4e3b-bb8a-b18e2949aa78', 'Klever Wallet')
+        ),
+        stats_since_march_4 AS (
+            SELECT 
+                am.api_key,
+                am.company,
+                COUNT(go.id) AS transaction_count_since_march_4,
+                SUM(go.amount) AS transaction_amount_since_march_4
+            FROM 
+                api_key_mapping am
+            LEFT JOIN 
+                gasfree_offchains go ON am.api_key = go.api_key
+            WHERE 
+                go.created_at BETWEEN '2025-03-04' AND NOW()
+            GROUP BY 
+                am.api_key, am.company
+        )
+        SELECT 
+            api_key,
+            company,
+            transaction_count_since_march_4,
+            transaction_amount_since_march_4
+        FROM 
+            stats_since_march_4 
+        ORDER BY 
+            transaction_count_since_march_4 DESC
+        LIMIT 3;
+        """
+
+        print("执行的 SQL 语句：\n", sql)
+
+        # 执行 SQL 查询
+        cursor.execute(sql)
+
+        # 获取所有查询结果
+        results = cursor.fetchall()
+
+        # 处理结果（示例：打印每行数据）
+        for row in results:
+            print("公司名称:", row[1])
+            print("交易数:", row[2])
+            print("交易金额:", row[3])
+            print("-" * 50)
+
+        # 返回完整结果（如果需要）
+        return results
+
+    except Exception as error:
+        print("Error while connecting to PostgreSQL or executing query:", error)
+        return None  # 或根据需求返回特定值
+    finally:
+        cursor.close()
 
 def main_trx():
     while True:
