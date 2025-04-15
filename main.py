@@ -127,9 +127,11 @@ def recur_trx_notif():
     # 提取分钟信息
     minutes = local_time.tm_min
     hours = local_time.tm_hour
-    if minutes == 0 and hours in [16, 22, 4, 10]:
     # if True:
-        message = get_oneoff_message()
+    message = query_and_alert()
+
+    # monitor machine is UTC-0 Zone.
+    if minutes == 0 and hours in [16, 22, 4, 10]:
         send_telegram_message(BOT_TOKEN, CHAT_ID, message)
         recur_trx_notif.last_heartbeat_time = current_time
         logger.info("Sent heartbeat message")
@@ -179,34 +181,39 @@ def alert_tron_trx_energy_net_v2(res_fields):
         logger.info(f"Sent alert: {alert_text}")
 
 
-def get_oneoff_message():
+def query_and_alert():
     try:
         current_time = datetime.datetime.now()
         now_datetime = current_time.strftime('%Y-%m-%dT%H:%M:%S')
         now_datetime_bj = (current_time + datetime.timedelta(hours=8)).strftime('%Y-%m-%dT%H:%M:%S')
         minus_one_day_datetime = (current_time - datetime.timedelta(hours=24)).strftime('%Y-%m-%dT%H:%M:%S')
-        minus_one_day_datetime_bj = (current_time - datetime.timedelta(hours=16)).strftime('%Y-%m-%dT%H:%M:%S')
+        # minus_one_day_datetime_bj = (current_time - datetime.timedelta(hours=16)).strftime('%Y-%m-%dT%H:%M:%S')
         genesis_datetime = '2025-03-04T00:00:00'
         connection = get_psql_conn()
         one_day_new_trx_count = query_trx(connection, minus_one_day_datetime, now_datetime, 'count', None, None, None)
+        one_day_new_trx_count_new_address = query_trx(connection, minus_one_day_datetime, now_datetime, 'count', None, None, None, True)
         # one_day_success_trx_count = query_trx(connection, minus_one_day_datetime, now_datetime, 'count', 'SUCCEED', None, None)
         one_day_failure_trx_count = query_trx(connection, minus_one_day_datetime, now_datetime, 'count', 'FAILED', None, None)
+        one_day_failure_trx_count_new_address = query_trx(connection, minus_one_day_datetime, now_datetime, 'count', 'FAILED', None, None, True)
         one_day_new_gte50_usdt_trx_count = query_trx(connection, minus_one_day_datetime, now_datetime, 'count', None, 50000000, True)
-        one_day_new_lt50_usdt_trx_count = query_trx(connection, minus_one_day_datetime, now_datetime, 'count', None, 50000000, False)
+        one_day_new_gte50_usdt_trx_count_new_address = query_trx(connection, minus_one_day_datetime, now_datetime, 'count', None, 50000000, True, True)
+        # one_day_new_lt50_usdt_trx_count = query_trx(connection, minus_one_day_datetime, now_datetime, 'count', None, 50000000, False)
         all_time_trx_count = query_trx(connection, genesis_datetime, now_datetime, 'count', None, None, None)
         # all_time_trx_success_count = query_trx(connection, genesis_datetime, now_datetime, 'count', 'SUCCEED', None, None)
         all_time_trx_failure_count = query_trx(connection, genesis_datetime, now_datetime, 'count', 'FAILED', None, None)
         all_time_trx_amount = format(query_trx(connection, genesis_datetime, now_datetime, 'amount', 'SUCCEED', None, None) / 1000000, ',.2f')
-        one_day_gte_50_ratio = '%.1f%%' % (one_day_new_gte50_usdt_trx_count / one_day_new_trx_count * 100) if one_day_new_trx_count > 0 else 0.0
+        one_day_gte_50_ratio = '%.1f%%' % (one_day_new_gte50_usdt_trx_count_new_address / one_day_new_trx_count * 100) if one_day_new_trx_count > 0 else 0.0
+        one_day_gte_50_ratio_new_address = '%.1f%%' % (one_day_new_gte50_usdt_trx_count_new_address / one_day_new_trx_count_new_address * 100) if one_day_new_trx_count_new_address > 0 else 0.0
         # one_day_lte_50_ratio = '%.1f%%' % (one_day_new_lt50_usdt_trx_count / one_day_new_trx_count * 100) if one_day_new_trx_count > 0 else 0.0
         one_day_trx_amount = format(query_trx(connection, minus_one_day_datetime, now_datetime, 'FAILED', 'SUCCEED', None, None) / 1000000, ',.2f')
+        one_day_trx_amount_new_address = format(query_trx(connection, minus_one_day_datetime, now_datetime, 'FAILED', 'SUCCEED', None, None, True) / 1000000, ',.2f')
 
         all_time_third_party_trx_res = query_all_time_trx_cnt_rank(connection)
-        all_time_third_party_trx_res_list = list(map(lambda row: f"   公司: {row[1]}, 交易数: {row[2]}, 交易金额: {row[3]}\r\n", all_time_third_party_trx_res))
+        all_time_third_party_trx_res_list = list(map(lambda row: f"   公司: {row[1]}, 交易数: {row[2]}, 交易金额: {format(float(row[3]) / 1000000, ',.2f')}\r\n", all_time_third_party_trx_res))
         all_time_third_party_trx_res_str = "".join(all_time_third_party_trx_res_list)
 
         last_day_third_party_trx_res = query_last_day_trx_cnt_rank(connection)
-        last_day_third_party_trx_res_list = list(map(lambda row: f"   公司: {row[1]}, 交易数: {row[2]}, 交易金额: {row[3]}\r\n", last_day_third_party_trx_res))
+        last_day_third_party_trx_res_list = list(map(lambda row: f"   公司: {row[1]}, 交易数: {row[2]}, 交易金额: {format(float(row[3]) / 1000000, ',.2f')}\r\n", last_day_third_party_trx_res))
         last_day_third_party_trx_res_str = "".join(last_day_third_party_trx_res_list)
 
         # resource related fields
@@ -221,6 +228,8 @@ def get_oneoff_message():
                       f"# 整体交易数据  \r\n"
                       f" 天交易数: {one_day_new_trx_count} (失败:{one_day_failure_trx_count}) \r\n"
                       f" 天交易额: {one_day_trx_amount} (>50$: {one_day_gte_50_ratio}) \r\n"
+                      f" 天交易数(新增地址): {one_day_new_trx_count_new_address} (失败:{one_day_failure_trx_count_new_address}) \r\n"
+                      f" 天交易额(新增地址): {one_day_trx_amount_new_address} (>50$: {one_day_gte_50_ratio_new_address}) \r\n"
                       f" 总交易数: {all_time_trx_count} (失败:{all_time_trx_failure_count}) \r\n"
                       f" 总交易额: {all_time_trx_amount}  \r\n"
                       f""
@@ -263,20 +272,23 @@ def get_psql_conn():
 #     3. end_time: created_time end
 #     4. agg_type: aggregation func type, supports `count` and `sum`
 #     5. state: transaction state, 'SUCCEED' | 'FAILED' | 'INPROGRESS' | 'WAITING'
-def query_trx(connection, start_time, end_time, agg_type, state, bound, gt):
+def query_trx(connection, start_time, end_time, agg_type, state, bound, gt, address_relate=False):
     try:
         # 连接到 PostgreSQL 数据库
         # 创建一个游标对象，用于执行 SQL 查询
         cursor = connection.cursor()
         # 定义要执行的 SQL 查询语句
-        query_column = 'count(amount)' if agg_type == 'count' else 'sum(amount)'
+        query_column = 'count(go.amount)' if agg_type == 'count' else 'sum(go.amount)'
         state_query = ""
 
         if state is not None:
-            state_query += f" and state = '{state}'"
+            state_query += f" and go.state = '{state}'"
         if bound is not None and gt is not None:
-            state_query += f" and amount {'>=' if gt else '<'} {bound}"
-        query = (f"select {query_column} from gasfree_offchains where created_at between '{start_time}' and '{end_time}' {state_query}")
+            state_query += f" and go.amount {'>=' if gt else '<'} {bound}"
+        if address_relate:
+            query = (f"select {query_column} from gasfree_addresses ga inner join gasfree_offchains go on ga.gasfree_address = go.gasfree_address where go.created_at between '{start_time}' and '{end_time}' and ga.created_at between '{start_time}' and '{end_time}' {state_query}")
+        else:
+            query = (f"select {query_column} from gasfree_offchains go where go.created_at between '{start_time}' and '{end_time}' {state_query}")
         print(query)
         # 执行 SQL 查询
         cursor.execute(query)
