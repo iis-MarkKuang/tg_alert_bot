@@ -130,10 +130,15 @@ def recur_trx_notif():
     minutes = local_time.tm_min
     hours = local_time.tm_hour
     # if True:
-    message = query_and_alert()
+
+    resource_fields = get_resources_fields()
+    check_resource_fields_and_alert(resource_fields, ALERT_INTERVAL)
+
 
     # monitor machine is UTC-0 Zone.
     if minutes == 0 and hours in [16, 22, 4, 10]:
+        message = query_transaction_and_addresses_info(resource_fields)
+
         send_telegram_message(BOT_TOKEN, CHAT_ID, message)
         recur_trx_notif.last_heartbeat_time = current_time
         logger.info("Sent heartbeat message")
@@ -143,19 +148,19 @@ def recur_trx_notif():
 
 
 
-def alert_tron_trx_energy_net_v2(res_fields, alert_interval):
+def check_resource_fields_and_alert(res_fields, alert_interval):
     """
     Alert if the Tron Trx, Energy or Net is below the warning threshold.
     Only sends alerts once every 30 minutes to avoid spam.
     :param tron: The TronTrxEnergyNet object.
     """
     # 使用类变量存储上次告警时间
-    if not hasattr(alert_tron_trx_energy_net_v2, "last_alert_time"):
-        alert_tron_trx_energy_net_v2.last_alert_time = 0
+    if not hasattr(check_resource_fields_and_alert, "last_alert_time"):
+        check_resource_fields_and_alert.last_alert_time = 0
 
     current_time = time.time()
     # 检查是否到达发送间隔(30分钟 = 1800秒)
-    if current_time - alert_tron_trx_energy_net_v2.last_alert_time < alert_interval:
+    if current_time - check_resource_fields_and_alert.last_alert_time < alert_interval:
         return
 
     alert_messages = []
@@ -179,11 +184,11 @@ def alert_tron_trx_energy_net_v2(res_fields, alert_interval):
         alert_text = "\n".join(alert_messages)
         send_telegram_message(BOT_TOKEN, CHAT_ID, alert_text)
         # 更新最后发送时间
-        alert_tron_trx_energy_net_v2.last_alert_time = current_time
+        check_resource_fields_and_alert.last_alert_time = current_time
         logger.info(f"Sent alert: {alert_text}")
 
 
-def query_and_alert():
+def query_transaction_and_addresses_info(resource_fields):
     try:
         current_time = datetime.datetime.now()
         now_datetime = current_time.strftime('%Y-%m-%dT%H:%M:%S')
@@ -219,9 +224,6 @@ def query_and_alert():
         last_day_third_party_trx_res_str = "".join(last_day_third_party_trx_res_list)
 
         # resource related fields
-        resource_fields = get_resources_fields()
-        alert_tron_trx_energy_net_v2(resource_fields, ALERT_INTERVAL)
-
 
         resource_message = get_resource_msg_simplified(resource_fields)
 

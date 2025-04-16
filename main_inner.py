@@ -130,32 +130,33 @@ def recur_trx_notif():
     minutes = local_time.tm_min
     hours = local_time.tm_hour
     # if True:
-    message = query_and_alert()
+
+    resource_fields = get_resources_fields()
+    check_resource_and_alert(resource_fields, ALERT_INTERVAL)
 
     # monitor machine is UTC-0 Zone.
     if minutes == 0:
+        message = query_trans_and_add_info(resource_fields)
         send_telegram_message(BOT_TOKEN, CHAT_ID_INNER, message)
         recur_trx_notif.last_heartbeat_time = current_time
-        logger.info("Sent heartbeat message")
         logger.info(message)
     else:
         logger.info(f"cur min {minutes} and hour {hours} not match send timestamp, skipping...")
 
 
-
-def alert_tron_trx_energy_net_v2(res_fields, alert_interval):
+def check_resource_and_alert(res_fields, alert_interval):
     """
     Alert if the Tron Trx, Energy or Net is below the warning threshold.
     Only sends alerts once every 30 minutes to avoid spam.
     :param tron: The TronTrxEnergyNet object.
     """
     # 使用类变量存储上次告警时间
-    if not hasattr(alert_tron_trx_energy_net_v2, "last_alert_time"):
-        alert_tron_trx_energy_net_v2.last_alert_time = 0
+    if not hasattr(check_resource_and_alert, "last_alert_time"):
+        check_resource_and_alert.last_alert_time = 0
 
     current_time = time.time()
     # 检查是否到达发送间隔(30分钟 = 1800秒)
-    if current_time - alert_tron_trx_energy_net_v2.last_alert_time < alert_interval:
+    if current_time - check_resource_and_alert.last_alert_time < alert_interval:
         return
 
     alert_messages = []
@@ -179,11 +180,11 @@ def alert_tron_trx_energy_net_v2(res_fields, alert_interval):
         alert_text = "\n".join(alert_messages)
         send_telegram_message(BOT_TOKEN, CHAT_ID_INNER, alert_text)
         # 更新最后发送时间
-        alert_tron_trx_energy_net_v2.last_alert_time = current_time
+        check_resource_and_alert.last_alert_time = current_time
         logger.info(f"Sent alert: {alert_text}")
 
 
-def query_and_alert():
+def query_trans_and_add_info(resource_fields):
     try:
         current_time = datetime.datetime.now()
         now_datetime = current_time.strftime('%Y-%m-%dT%H:%M:%S')
@@ -219,11 +220,17 @@ def query_and_alert():
         last_day_third_party_trx_res_str = "".join(last_day_third_party_trx_res_list)
 
         # resource related fields
-        resource_fields = get_resources_fields()
-        alert_tron_trx_energy_net_v2(resource_fields, ALERT_INTERVAL)
-
-
         resource_message = get_resource_msg_simplified(resource_fields)
+
+        all_addresses_count = query_addresses(connection, 0, 10000000000)
+        gte50_addresses_count = query_addresses(connection, 50, 10000000000)
+        gte10_lt50_addresses_count = query_addresses(connection, 10, 50)
+        gte5_lt10_addresses_count = query_addresses(connection, 5, 10)
+        gte0_lt5_addresses_count = query_addresses(connection, 0, 5)
+        gte50_address_ratio = '%.1f%%' % (gte50_addresses_count / all_addresses_count * 100) if all_addresses_count > 0 else 0.0
+        gte10_lt50_address_ratio = '%.1f%%' % (gte10_lt50_addresses_count / all_addresses_count * 100) if all_addresses_count > 0 else 0.0
+        gte5_lt10_add_ratio = '%.1f%%' % (gte5_lt10_addresses_count / all_addresses_count * 100) if all_addresses_count > 0 else 0.0
+        gte0_lt5_add_ratio = '%.1f%%' % (gte0_lt5_addresses_count / all_addresses_count * 100) if all_addresses_count > 0 else 0.0
 
         top_qps_endpoint_data_tuple = get_top_qps_endpoint_data_tuple()
         alert_text = (f"GasFree Provider 截止 {now_datetime_bj} 数据汇总: \r\n"
@@ -234,14 +241,20 @@ def query_and_alert():
                       f" 天交易额(新增地址): {one_day_trx_amount_new_address} (>50$: {one_day_gte_50_ratio_new_address}) \r\n"
                       f" 总交易数: {all_time_trx_count} (失败:{all_time_trx_failure_count}) \r\n"
                       f" 总交易额: {all_time_trx_amount}  \r\n"
-                      f""
+                      f"\r\n"
+                      f"# 地址交易数分布  \r\n"
+                      f" >=50  笔 地址数量: {gte50_addresses_count} 占比: {gte50_address_ratio}  \r\n"
+                      f" 10-50 笔 地址数量: {gte10_lt50_addresses_count} 占比: {gte10_lt50_address_ratio}  \r\n"
+                      f" 5-10  笔 地址数量: {gte5_lt10_addresses_count} 占比: {gte5_lt10_add_ratio}  \r\n"
+                      f" 0-5   笔 地址数量: {gte0_lt5_addresses_count} 占比: {gte0_lt5_add_ratio}  \r\n"
+                      f"\r\n"
                       # # TODO to be supplied
                       f"# 第三方数据  \r\n"
                       f" 上线以来交易排行:  \r\n"
                       f"{all_time_third_party_trx_res_str}"
                       f" 过去一天交易排行:  \r\n"
                       f"{last_day_third_party_trx_res_str}"
-                      f""
+                      f"\r\n"
                       f"# 资源数据: \r\n"
                       f"{resource_message}"
                       f"# 接口调用QPS Top1: \r\n"
@@ -291,6 +304,36 @@ def query_trx(connection, start_time, end_time, agg_type, state, bound, gt, addr
             query = (f"select {query_column} from gasfree_addresses ga inner join gasfree_offchains go on ga.gasfree_address = go.gasfree_address where go.created_at between '{start_time}' and '{end_time}' and ga.created_at between '{start_time}' and '{end_time}' {state_query}")
         else:
             query = (f"select {query_column} from gasfree_offchains go where go.created_at between '{start_time}' and '{end_time}' {state_query}")
+        print(query)
+        # 执行 SQL 查询
+        cursor.execute(query)
+        # 获取查询结果
+        results = cursor.fetchall()
+        # 打印查询结果
+        for row in results:
+            print(row)
+    except Exception as error:
+        print("Error while connecting to PostgreSQL or executing query", error)
+        return 0
+    return row[0]
+
+
+def query_addresses(connection, lower_bound, upper_bound):
+    try:
+        # 连接到 PostgreSQL 数据库
+        # 创建一个游标对象，用于执行 SQL 查询
+        cursor = connection.cursor()
+        # 定义要执行的 SQL 查询语句
+        query = (f"""
+            SELECT COUNT(*) 
+            FROM (
+                SELECT ga.account_address 
+                FROM gasfree_addresses ga 
+                INNER JOIN gasfree_offchains go ON ga.gasfree_address = go.gasfree_address 
+                GROUP BY ga.account_address 
+                HAVING COUNT(go.id) >= {lower_bound} and COUNT(go.id) < {upper_bound}
+            ) AS temp;
+        """)
         print(query)
         # 执行 SQL 查询
         cursor.execute(query)
