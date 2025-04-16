@@ -25,7 +25,7 @@ logger.add(
 load_dotenv()
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-CHAT_ID = os.getenv("CHAT_ID")
+CHAT_ID_INNER = os.getenv("CHAT_ID_INNER")
 METRICS_URL = os.getenv("METRICS_URL")
 # tron configs
 TRON_TRX_WARNING = float(os.getenv("TRON_TRX_WARNING"))
@@ -35,10 +35,10 @@ TRON_ENERGY_WARNING_RATIO = float(os.getenv("TRON_ENERGY_WARNING_RATIO"))
 TRON_NET_WARNING_RATIO = float(os.getenv("TRON_NET_WARNING_RATIO"))
 TRON_BALANCE_WARNING_RATIO = float(os.getenv("TRON_BALANCE_WARNING_RATIO"))
 
-ALERT_INTERVAL = 1800
+ALERT_INTERVAL = 600
 
 logger.info(
-    f"BOT_TOKEN: {BOT_TOKEN}, CHAT_ID: {CHAT_ID}, METRICS_URL: {METRICS_URL},\n"
+    f"BOT_TOKEN: {BOT_TOKEN}, CHAT_ID: {CHAT_ID_INNER}, METRICS_URL: {METRICS_URL},\n"
     f"TRON_TRX_WARNING: {TRON_TRX_WARNING}, TRON_ENERGY_WARNING: {TRON_ENERGY_WARNING}, TRON_NET_WARNING: {TRON_NET_WARNING},\n"
 )
 
@@ -133,8 +133,8 @@ def recur_trx_notif():
     message = query_and_alert()
 
     # monitor machine is UTC-0 Zone.
-    if minutes == 0 and hours in [16, 22, 4, 10]:
-        send_telegram_message(BOT_TOKEN, CHAT_ID, message)
+    if minutes == 0:
+        send_telegram_message(BOT_TOKEN, CHAT_ID_INNER, message)
         recur_trx_notif.last_heartbeat_time = current_time
         logger.info("Sent heartbeat message")
         logger.info(message)
@@ -177,7 +177,7 @@ def alert_tron_trx_energy_net_v2(res_fields, alert_interval):
 
     if alert_messages:
         alert_text = "\n".join(alert_messages)
-        send_telegram_message(BOT_TOKEN, CHAT_ID, alert_text)
+        send_telegram_message(BOT_TOKEN, CHAT_ID_INNER, alert_text)
         # 更新最后发送时间
         alert_tron_trx_energy_net_v2.last_alert_time = current_time
         logger.info(f"Sent alert: {alert_text}")
