@@ -366,7 +366,14 @@ def query_last_day_trx_cnt_rank(connection):
                 ('d2dc932a-29d4-4b56-a21a-8276a68163a4', 'BitGo'),
                 ('38df29b6-8a43-43a3-83a3-b724a8b0f10d', 'IM Token'),
                 ('d6448b6f-92e8-4865-804c-aeacdca69a0b', 'BitGet'),
-                ('d0795e19-0ba1-4e3b-bb8a-b18e2949aa78', 'Klever Wallet')
+                ('d0795e19-0ba1-4e3b-bb8a-b18e2949aa78', 'Klever Wallet'),
+                ('ccb3dfca-b3cf-41e2-b083-988079397041', 'Clicklead'),
+                ('26394b70-32ce-4a88-8f13-5cd7d94cf2dd', 'Switchain'),
+                ('91bbbde3-196b-43b3-8185-d7a4788338ca', 'edir by bixi'),
+                ('b486c3da-2f4e-4443-8dfe-775c9b15629b', 'Banexcoin'),
+                ('58c04d51-727d-43b2-85a4-da95bfb0a3b5', 'BitAfrika'),
+                ('60c360fc-e1b5-4c00-93b7-c00a9198a489', 'Alua'),
+                ('b737fd4d-15de-42b4-a6a0-9a206b910662', 'BitGate')
         ),
         stats_since_march_4 AS (
             SELECT 
@@ -438,7 +445,14 @@ def query_all_time_trx_cnt_rank(connection):
                 ('d2dc932a-29d4-4b56-a21a-8276a68163a4', 'BitGo'),
                 ('38df29b6-8a43-43a3-83a3-b724a8b0f10d', 'IM Token'),
                 ('d6448b6f-92e8-4865-804c-aeacdca69a0b', 'BitGet'),
-                ('d0795e19-0ba1-4e3b-bb8a-b18e2949aa78', 'Klever Wallet')
+                ('d0795e19-0ba1-4e3b-bb8a-b18e2949aa78', 'Klever Wallet'),
+                ('ccb3dfca-b3cf-41e2-b083-988079397041', 'Clicklead'),
+                ('26394b70-32ce-4a88-8f13-5cd7d94cf2dd', 'Switchain'),
+                ('91bbbde3-196b-43b3-8185-d7a4788338ca', 'edir by bixi'),
+                ('b486c3da-2f4e-4443-8dfe-775c9b15629b', 'Banexcoin'),
+                ('58c04d51-727d-43b2-85a4-da95bfb0a3b5', 'BitAfrika'),
+                ('60c360fc-e1b5-4c00-93b7-c00a9198a489', 'Alua'),
+                ('b737fd4d-15de-42b4-a6a0-9a206b910662', 'BitGate')
         ),
         stats_since_march_4 AS (
             SELECT 
