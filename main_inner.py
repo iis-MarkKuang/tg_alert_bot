@@ -250,9 +250,9 @@ def query_trans_and_add_info(resource_fields):
                       f"\r\n"
                       # # TODO to be supplied
                       f"# 第三方数据  \r\n"
-                      f" 上线以来交易排行:  \r\n"
+                      f" 上线以来交易金额排行:  \r\n"
                       f"{all_time_third_party_trx_res_str}"
-                      f" 过去一天交易排行:  \r\n"
+                      f" 过去一天交易金额排行:  \r\n"
                       f"{last_day_third_party_trx_res_str}"
                       f"\r\n"
                       f"# 资源数据: \r\n"
@@ -398,7 +398,7 @@ def query_last_day_trx_cnt_rank(connection):
         FROM 
             stats_since_march_4 
         ORDER BY 
-            transaction_count_since_march_4 DESC
+            transaction_amount_since_march_4 DESC
         LIMIT 3;
         """
 
@@ -477,7 +477,7 @@ def query_all_time_trx_cnt_rank(connection):
         FROM 
             stats_since_march_4 
         ORDER BY 
-            transaction_count_since_march_4 DESC
+            transaction_amount_since_march_4 DESC
         LIMIT 3;
         """
 
