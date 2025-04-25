@@ -1,4 +1,3 @@
-import os
 import datetime
 import os
 import time
@@ -210,13 +209,13 @@ def trigger_hourly_stats_command(update: Update, context: CallbackContext) -> No
 
 def main_trx():
     application = Application.builder().token(BOT_TOKEN).build()
-    dispatcher = application.dispatcher
 
-    # 添加 /help 命令处理程序
-    dispatcher.add_handler(CommandHandler("help", help_command))
-    dispatcher.add_handler(CommandHandler("triggerHourlyStats", trigger_hourly_stats_command))
+    # 直接在 application 上添加处理程序
+    application.add_handler(CommandHandler("help", help_command))
+    application.add_handler(CommandHandler("triggerHourlyStats", trigger_hourly_stats_command))
 
-    updater.start_polling()
+    application.run_polling()
+
     while True:
         try:
             recur_trx_notif()
