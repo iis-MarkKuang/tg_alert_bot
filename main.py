@@ -136,10 +136,11 @@ def recur_trx_notif():
 
 
     # monitor machine is UTC-0 Zone.
-    if minutes == 0 and hours in [16, 22, 4, 10]:
+    if True:
+    # if minutes == 0 and hours in [16, 22, 4, 10]:
         message = query_transaction_and_addresses_info(resource_fields)
 
-        send_telegram_message(BOT_TOKEN, CHAT_ID, message)
+        # send_telegram_message(BOT_TOKEN, CHAT_ID, message)
         recur_trx_notif.last_heartbeat_time = current_time
         logger.info("Sent heartbeat message")
         logger.info(message)
@@ -165,9 +166,9 @@ def check_resource_fields_and_alert(res_fields, alert_interval):
 
     alert_messages = []
 
-    if res_fields['balance_remaining_ratio_float'] < TRON_BALANCE_WARNING_RATIO:
+    if res_fields['balance_float'] < TRON_TRX_WARNING:
         alert_messages.append(
-            f"⚠️ TRX余额不足! 当前: {res_fields['balance']:.3f}, 警告阈值: {TRON_TRX_WARNING}"
+            f"⚠️ TRX余额不足! 当前USDT: {res_fields['balance_float']:.3f}, 警告阈值: {TRON_TRX_WARNING}"
         )
 
     if res_fields['energy_remaining_ratio_float'] < TRON_ENERGY_WARNING_RATIO:
@@ -325,7 +326,14 @@ def query_last_day_trx_cnt_rank(connection):
                 ('d2dc932a-29d4-4b56-a21a-8276a68163a4', 'BitGo'),
                 ('38df29b6-8a43-43a3-83a3-b724a8b0f10d', 'IM Token'),
                 ('d6448b6f-92e8-4865-804c-aeacdca69a0b', 'BitGet'),
-                ('d0795e19-0ba1-4e3b-bb8a-b18e2949aa78', 'Klever Wallet')
+                ('d0795e19-0ba1-4e3b-bb8a-b18e2949aa78', 'Klever Wallet'),
+                ('ccb3dfca-b3cf-41e2-b083-988079397041', 'Clicklead'),
+                ('26394b70-32ce-4a88-8f13-5cd7d94cf2dd', 'Switchain'),
+                ('91bbbde3-196b-43b3-8185-d7a4788338ca', 'edir by bixi'),
+                ('b486c3da-2f4e-4443-8dfe-775c9b15629b', 'Banexcoin'),
+                ('58c04d51-727d-43b2-85a4-da95bfb0a3b5', 'BitAfrika'),
+                ('60c360fc-e1b5-4c00-93b7-c00a9198a489', 'Alua'),
+                ('b737fd4d-15de-42b4-a6a0-9a206b910662', 'BitGate')
         ),
         stats_since_march_4 AS (
             SELECT 
@@ -397,7 +405,14 @@ def query_all_time_trx_cnt_rank(connection):
                 ('d2dc932a-29d4-4b56-a21a-8276a68163a4', 'BitGo'),
                 ('38df29b6-8a43-43a3-83a3-b724a8b0f10d', 'IM Token'),
                 ('d6448b6f-92e8-4865-804c-aeacdca69a0b', 'BitGet'),
-                ('d0795e19-0ba1-4e3b-bb8a-b18e2949aa78', 'Klever Wallet')
+                ('d0795e19-0ba1-4e3b-bb8a-b18e2949aa78', 'Klever Wallet'),
+                ('ccb3dfca-b3cf-41e2-b083-988079397041', 'Clicklead'),
+                ('26394b70-32ce-4a88-8f13-5cd7d94cf2dd', 'Switchain'),
+                ('91bbbde3-196b-43b3-8185-d7a4788338ca', 'edir by bixi'),
+                ('b486c3da-2f4e-4443-8dfe-775c9b15629b', 'Banexcoin'),
+                ('58c04d51-727d-43b2-85a4-da95bfb0a3b5', 'BitAfrika'),
+                ('60c360fc-e1b5-4c00-93b7-c00a9198a489', 'Alua'),
+                ('b737fd4d-15de-42b4-a6a0-9a206b910662', 'BitGate')
         ),
         stats_since_march_4 AS (
             SELECT 
@@ -486,6 +501,7 @@ def get_resources_fields():
     res['balance_limit'] = 10466772977
     res['balance_remaining_ratio_float'] = resource_json['balance'] / res['balance_limit']
     res['balance'] = format(resource_json['balance'] / 1000000, ',.2f')
+    res['balance_float'] = resource_json['balance'] / 1000000
     res['energy_cost'] = resource_json['energyCost']
     res['net_cost'] = resource_json['netCost']
     res['energy_remaining'] = resource_json['bandwidth']['energyRemaining']

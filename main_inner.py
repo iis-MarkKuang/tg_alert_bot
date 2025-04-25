@@ -161,9 +161,9 @@ def check_resource_and_alert(res_fields, alert_interval):
 
     alert_messages = []
 
-    if res_fields['balance_remaining_ratio_float'] < TRON_BALANCE_WARNING_RATIO:
+    if res_fields['balance_float'] < TRON_TRX_WARNING:
         alert_messages.append(
-            f"⚠️ TRX余额不足! 当前: {res_fields['balance']:.3f}, 警告阈值: {TRON_TRX_WARNING}"
+            f"⚠️ TRX余额不足! 当前USDT: {res_fields['balance_float']:.3f}, 警告阈值: {TRON_TRX_WARNING}"
         )
 
     if res_fields['energy_remaining_ratio_float'] < TRON_ENERGY_WARNING_RATIO:
@@ -541,6 +541,7 @@ def get_resources_fields():
     res['balance_limit'] = 10466772977
     res['balance_remaining_ratio_float'] = resource_json['balance'] / res['balance_limit']
     res['balance'] = format(resource_json['balance'] / 1000000, ',.2f')
+    res['balance_float'] = resource_json['balance'] / 1000000
     res['energy_cost'] = resource_json['energyCost']
     res['net_cost'] = resource_json['netCost']
     res['energy_remaining'] = resource_json['bandwidth']['energyRemaining']
