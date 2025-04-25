@@ -28,6 +28,7 @@ load_dotenv()
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 CHAT_ID_INNER = os.getenv("CHAT_ID_INNER")
+CHAT_ID_EXP = os.getenv("CHAT_ID_EXP")
 METRICS_URL = os.getenv("METRICS_URL")
 # tron configs
 TRON_TRX_WARNING = float(os.getenv("TRON_TRX_WARNING"))
