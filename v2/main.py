@@ -87,7 +87,7 @@ def check_resource_and_alert(res_fields, alert_interval):
 
     if alert_messages:
         alert_text = "\n".join(alert_messages)
-        send_telegram_message(BOT_TOKEN, CHAT_ID_INNER, alert_text)
+        # send_telegram_message(BOT_TOKEN, CHAT_ID_INNER, alert_text)
         check_resource_and_alert.last_alert_time = current_time
         logger.info(f"Sent alert: {alert_text}")
 
@@ -183,7 +183,7 @@ def recur_trx_notif():
 
     if minutes == 0:
         message = query_trans_and_add_info(resource_fields)
-        send_telegram_message(BOT_TOKEN, CHAT_ID_INNER, message)
+        # send_telegram_message(BOT_TOKEN, CHAT_ID_INNER, message)
         recur_trx_notif.last_heartbeat_time = current_time
         logger.info(message)
     else:

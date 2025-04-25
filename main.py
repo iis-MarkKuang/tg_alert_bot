@@ -136,8 +136,7 @@ def recur_trx_notif():
 
 
     # monitor machine is UTC-0 Zone.
-    if True:
-    # if minutes == 0 and hours in [16, 22, 4, 10]:
+    if minutes == 0 and hours in [16, 22, 4, 10]:
         message = query_transaction_and_addresses_info(resource_fields)
 
         # send_telegram_message(BOT_TOKEN, CHAT_ID, message)
