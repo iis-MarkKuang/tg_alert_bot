@@ -6,7 +6,7 @@ import time
 from dotenv import load_dotenv
 from loguru import logger
 from telegram import Update
-from telegram.ext import Updater, CommandHandler, CallbackContext
+from telegram.ext import Application, CommandHandler, CallbackContext
 
 from db_operations import get_psql_conn, query_trx, query_addresses, query_last_day_trx_cnt_rank, \
     query_all_time_trx_cnt_rank
@@ -209,8 +209,8 @@ def trigger_hourly_stats_command(update: Update, context: CallbackContext) -> No
     update.message.reply_text(message)
 
 def main_trx():
-    updater = Updater(BOT_TOKEN)
-    dispatcher = updater.dispatcher
+    application = Application.builder().token(BOT_TOKEN).build()
+    dispatcher = application.dispatcher
 
     # 添加 /help 命令处理程序
     dispatcher.add_handler(CommandHandler("help", help_command))
