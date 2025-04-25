@@ -40,7 +40,7 @@ TRON_BALANCE_WARNING_RATIO = float(os.getenv("TRON_BALANCE_WARNING_RATIO"))
 ALERT_INTERVAL = 600
 
 logger.info(
-    f"BOT_TOKEN: {BOT_TOKEN}, CHAT_ID: {CHAT_ID_EXP}, METRICS_URL: {METRICS_URL},\n"
+    f"BOT_TOKEN: {BOT_TOKEN}, CHAT_ID: {CHAT_ID_INNER}, METRICS_URL: {METRICS_URL},\n"
     f"TRON_TRX_WARNING: {TRON_TRX_WARNING}, TRON_ENERGY_WARNING: {TRON_ENERGY_WARNING}, TRON_NET_WARNING: {TRON_NET_WARNING},\n"
 )
 
@@ -92,7 +92,7 @@ def check_resource_and_alert(res_fields, alert_interval):
 
     if alert_messages:
         alert_text = "\n".join(alert_messages)
-        send_telegram_message(BOT_TOKEN, CHAT_ID_EXP, alert_text)
+        send_telegram_message(BOT_TOKEN, CHAT_ID_INNER, alert_text)
         check_resource_and_alert.last_alert_time = current_time
         logger.info(f"Sent alert: {alert_text}")
 
