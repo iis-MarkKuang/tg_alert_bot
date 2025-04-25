@@ -1,6 +1,8 @@
 import datetime
 import os
 import time
+from multiprocessing import Process
+
 
 from dotenv import load_dotenv
 from loguru import logger
@@ -206,25 +208,44 @@ async def trigger_hourly_stats_command(update: Update, context: CallbackContext)
     resource_fields = get_resources_fields()
     message = query_trans_and_add_info(resource_fields)
     await update.message.reply_text(message)
-
-def main_trx():
+def run_bot():
+    """子进程：运行 Bot 轮询"""
     application = Application.builder().token(BOT_TOKEN).build()
-
-    # 直接在 application 上添加处理程序
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("triggerHourlyStats", trigger_hourly_stats_command))
-
     application.run_polling()
 
+def run_scheduler():
+    """子进程：运行定时任务"""
     while True:
         try:
             recur_trx_notif()
         except Exception as e:
             import traceback
             logger.error(traceback.format_exc())
-            logger.error(f"Error in main loop: {e}")
+            logger.error(f"Error in scheduler loop: {e}")
         finally:
-            time.sleep(60)
+            time.sleep(60)  # 控制定时任务的执行间隔
+
+def main_trx():
+    # 创建两个子进程
+    bot_process = Process(target=run_bot)
+    scheduler_process = Process(target=run_scheduler)
+
+    # 启动子进程
+    bot_process.start()
+    scheduler_process.start()
+
+    # 等待子进程结束（可根据需要添加键盘中断处理）
+    try:
+        bot_process.join()
+        scheduler_process.join()
+    except KeyboardInterrupt:
+        logger.info("接收到键盘中断，正在停止进程...")
+        bot_process.terminate()
+        scheduler_process.terminate()
+        bot_process.join()
+        scheduler_process.join()
 
 if __name__ == "__main__":
     main_trx()
