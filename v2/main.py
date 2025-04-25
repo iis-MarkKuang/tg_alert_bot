@@ -1,12 +1,14 @@
-import json
+import os
+import datetime
 import os
 import time
-import datetime
+
 from dotenv import load_dotenv
 from loguru import logger
-from telegram_operations import send_telegram_message
-from db_operations import get_psql_conn, query_trx, query_addresses, query_last_day_trx_cnt_rank, query_all_time_trx_cnt_rank
-from metrics_operations import get_top_qps_endpoint_data_tuple, get_metrics, parse_tron_trx_energy_net, get_resources_fields
+
+from db_operations import get_psql_conn, query_trx, query_addresses, query_last_day_trx_cnt_rank, \
+    query_all_time_trx_cnt_rank
+from metrics_operations import get_top_qps_endpoint_data_tuple, get_resources_fields
 
 # Configs
 logger.add(

@@ -1,6 +1,8 @@
-import requests
 import json
+
+import requests
 from prometheus_http_client import Prometheus
+from tenacity import retry, stop_after_attempt, wait_fixed
 
 prom = Prometheus()
 
