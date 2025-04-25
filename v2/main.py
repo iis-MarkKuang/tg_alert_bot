@@ -201,7 +201,7 @@ async def help_command(update: Update, context: CallbackContext) -> None:
     """Send a message when the command /help is issued."""
     help_text = "以下是可用的命令:\n"
     help_text += "/help - 显示帮助信息\n"
-    help_text += "/triggerHourlyStats - 触发小时级别播报数据\n"
+    help_text += "/hourlyStat - 触发小时级别播报数据\n"
     await update.message.reply_text(help_text)
 
 async def trigger_hourly_stats_command(update: Update, context: CallbackContext) -> None:
@@ -212,7 +212,7 @@ def run_bot():
     """子进程：运行 Bot 轮询"""
     application = Application.builder().token(BOT_TOKEN).build()
     application.add_handler(CommandHandler("help", help_command))
-    application.add_handler(CommandHandler("triggerHourlyStats", trigger_hourly_stats_command))
+    application.add_handler(CommandHandler("hourlyStat", trigger_hourly_stats_command))
     application.run_polling()
 
 def run_scheduler():
