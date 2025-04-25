@@ -79,7 +79,7 @@ def check_resource_and_alert(res_fields, alert_interval):
 
     if res_fields['balance_float'] < TRON_TRX_WARNING:
         alert_messages.append(
-            f"⚠️ TRX余额不足! 当前USDT: {res_fields['balance_float']:.3f}, 警告阈值: {TRON_TRX_WARNING}"
+            f"⚠️ TRX余额不足! 当前TRX: {res_fields['balance_float']:.3f}, 警告阈值: {TRON_TRX_WARNING}"
         )
 
     if res_fields['energy_remaining_ratio_float'] < TRON_ENERGY_WARNING_RATIO:
