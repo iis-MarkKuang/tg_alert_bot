@@ -195,17 +195,17 @@ def recur_trx_notif():
     else:
         logger.info(f"cur min {minutes} and hour {hours} not match send timestamp, skipping...")
 
-def help_command(update: Update, context: CallbackContext) -> None:
+async def help_command(update: Update, context: CallbackContext) -> None:
     """Send a message when the command /help is issued."""
     help_text = "以下是可用的命令:\n"
     help_text += "/help - 显示帮助信息\n"
     help_text += "/triggerHourlyStats - 触发小时级别播报数据\n"
-    update.message.reply_text(help_text)
+    await update.message.reply_text(help_text)
 
-def trigger_hourly_stats_command(update: Update, context: CallbackContext) -> None:
+async def trigger_hourly_stats_command(update: Update, context: CallbackContext) -> None:
     resource_fields = get_resources_fields()
     message = query_trans_and_add_info(resource_fields)
-    update.message.reply_text(message)
+    await update.message.reply_text(message)
 
 def main_trx():
     application = Application.builder().token(BOT_TOKEN).build()
