@@ -5,10 +5,13 @@ import time
 
 from dotenv import load_dotenv
 from loguru import logger
+from telegram import Update
+from telegram.ext import Updater, CommandHandler, CallbackContext
 
 from db_operations import get_psql_conn, query_trx, query_addresses, query_last_day_trx_cnt_rank, \
     query_all_time_trx_cnt_rank
 from metrics_operations import get_top_qps_endpoint_data_tuple, get_resources_fields
+from telegram_operations import send_telegram_message
 
 # Configs
 logger.add(
@@ -89,7 +92,7 @@ def check_resource_and_alert(res_fields, alert_interval):
 
     if alert_messages:
         alert_text = "\n".join(alert_messages)
-        # send_telegram_message(BOT_TOKEN, CHAT_ID_INNER, alert_text)
+        send_telegram_message(BOT_TOKEN, CHAT_ID_INNER, alert_text)
         check_resource_and_alert.last_alert_time = current_time
         logger.info(f"Sent alert: {alert_text}")
 
@@ -183,16 +186,36 @@ def recur_trx_notif():
     resource_fields = get_resources_fields()
     check_resource_and_alert(resource_fields, ALERT_INTERVAL)
 
-    # if minutes == 0:
-    if True:
+
+    if minutes == 0:
         message = query_trans_and_add_info(resource_fields)
-        # send_telegram_message(BOT_TOKEN, CHAT_ID_INNER, message)
+        send_telegram_message(BOT_TOKEN, CHAT_ID_INNER, message)
         recur_trx_notif.last_heartbeat_time = current_time
         logger.info(message)
     else:
         logger.info(f"cur min {minutes} and hour {hours} not match send timestamp, skipping...")
 
+def help_command(update: Update, context: CallbackContext) -> None:
+    """Send a message when the command /help is issued."""
+    help_text = "以下是可用的命令:\n"
+    help_text += "/help - 显示帮助信息\n"
+    help_text += "/triggerHourlyStats - 触发小时级别播报数据\n"
+    update.message.reply_text(help_text)
+
+def trigger_hourly_stats_command(update: Update, context: CallbackContext) -> None:
+    resource_fields = get_resources_fields()
+    message = query_trans_and_add_info(resource_fields)
+    update.message.reply_text(message)
+
 def main_trx():
+    updater = Updater(BOT_TOKEN)
+    dispatcher = updater.dispatcher
+
+    # 添加 /help 命令处理程序
+    dispatcher.add_handler(CommandHandler("help", help_command))
+    dispatcher.add_handler(CommandHandler("triggerHourlyStats", trigger_hourly_stats_command))
+
+    updater.start_polling()
     while True:
         try:
             recur_trx_notif()
