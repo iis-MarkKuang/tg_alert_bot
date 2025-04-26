@@ -201,18 +201,32 @@ async def help_command(update: Update, context: CallbackContext) -> None:
     """Send a message when the command /help is issued."""
     help_text = "以下是可用的命令:\n"
     help_text += "/help - 显示帮助信息\n"
-    help_text += "/hourlyStat - 触发小时级别播报数据\n"
+    help_text += "/st - 触发小时级别播报数据\n"
+    help_text += "/rs - 获取最新能量+带宽资源信息\n"
     await update.message.reply_text(help_text)
+
+async def handle_get_resource_command(update: Update, context: CallbackContext) -> None:
+    resource_fields = get_resources_fields()
+    message = (f"资源情况\n"
+                f"  剩余能量: {resource_fields['energy_remaining']}\n"
+                f"  剩余能量比例: {resource_fields['energy_remaining_ratio_float']}\n"
+                f"  剩余带宽: {resource_fields['net_remaining']}\n"
+                f"  剩余带宽比例: {resource_fields['net_remaining_ratio_float']}\n")
+    await update.message.reply_text(message)
+
 
 async def trigger_hourly_stats_command(update: Update, context: CallbackContext) -> None:
     resource_fields = get_resources_fields()
     message = query_trans_and_add_info(resource_fields)
     await update.message.reply_text(message)
+
+
 def run_bot():
     """子进程：运行 Bot 轮询"""
     application = Application.builder().token(BOT_TOKEN).build()
     application.add_handler(CommandHandler("help", help_command))
-    application.add_handler(CommandHandler("hourlyStat", trigger_hourly_stats_command))
+    application.add_handler(CommandHandler("st", trigger_hourly_stats_command))
+    application.add_handler(CommandHandler("rs", handle_get_resource_command))
     application.run_polling()
 
 def run_scheduler():
