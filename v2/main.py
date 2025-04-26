@@ -220,8 +220,8 @@ async def handle_get_resource_command(update: Update, context: CallbackContext) 
                 f"  剩余带宽支持交易数(地址已激活): {resource_fields['estimated_trans_with_net']}\n"
                 f"\n"
                 f"  剩余备用金: {resource_fields['balance']} TRX \n"
-                f"  剩余备用金支持交易数(地址未激活): {'%.1f' % (float(resource_fields['balance']) / 40.8)}\n"
-                f"  剩余备用金支持交易数(地址已激活): {'%.1f' % (float(resource_fields['balance']) / 20.4)}")
+                f"  剩余备用金支持交易数(地址未激活): {'%.1f' % (float(resource_fields['balance'].replace(',', '')) / 40.8)}\n"
+                f"  剩余备用金支持交易数(地址已激活): {'%.1f' % (float(resource_fields['balance'].replace(',', '')) / 20.4)}")
     await update.message.reply_text(message)
 
 
