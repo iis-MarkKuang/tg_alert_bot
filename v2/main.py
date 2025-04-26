@@ -217,8 +217,9 @@ async def handle_get_resource_command(update: Update, context: CallbackContext) 
                 f"  剩余带宽: {resource_fields['net_remaining']}\n"
                 f"  剩余带宽比例: {resource_fields['net_remain_ratio']}\n"
                 f"  带宽上限: {resource_fields['net_limit']}\n"
-                f"  剩余带宽支持交易数(地址已激活): {resource_fields['estimated_trans_with_net']}")
-
+                f"  剩余带宽支持交易数(地址已激活): {resource_fields['estimated_trans_with_net']}"
+                f"\n"
+                f"  剩余备用金：{resource_fields['balance']} TRX \n")
     await update.message.reply_text(message)
 
 
