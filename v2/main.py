@@ -197,12 +197,25 @@ def recur_trx_notif():
     else:
         logger.info(f"cur min {minutes} and hour {hours} not match send timestamp, skipping...")
 
+async def alter_threshold_command(update: Update, context: CallbackContext) -> None:
+    if not context.args:
+        await update.message.reply_text("请提供阈值参数，例如：/al_en_th 0.5 代表将能量阈值预警比例改成50%")
+        return
+
+    try:
+        new_energy_warning_ratio = float(context.args[0])
+        global TRON_ENERGY_WARNING_RATIO  # 假设需要修改全局阈值（根据实际需求调整）
+        TRON_ENERGY_WARNING_RATIO = new_energy_warning_ratio
+        await update.message.reply_text(f"能量警告比例阈值已更新为：{new_energy_warning_ratio}")
+    except ValueError:
+        await update.message.reply_text("参数错误：请输入有效的数字（例如 0.5, 代表将能量阈值预警比例改成50%）")
+
 async def help_command(update: Update, context: CallbackContext) -> None:
-    """Send a message when the command /help is issued."""
     help_text = "以下是可用的命令:\n"
     help_text += "/help - 显示帮助信息\n"
     help_text += "/st - 触发小时级别播报数据\n"
     help_text += "/rs - 获取最新能量+带宽资源信息\n"
+    help_text += "/al_en_th <修改能量警告阈值> - 修改能量警告阈值，例如：/al_en_th 0.5 代表将能量阈值预警比例改成50%\n"
     await update.message.reply_text(help_text)
 
 async def handle_get_resource_command(update: Update, context: CallbackContext) -> None:
@@ -237,6 +250,7 @@ def run_bot():
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("st", trigger_hourly_stats_command))
     application.add_handler(CommandHandler("rs", handle_get_resource_command))
+    application.add_handler(CommandHandler("al_en_th", alter_threshold_command))  # 新增此行
     application.run_polling()
 
 def run_scheduler():
