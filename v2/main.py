@@ -4,7 +4,7 @@ import time
 from multiprocessing import Process
 
 
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv, set_key
 from loguru import logger
 from telegram import Update
 from telegram.ext import Application, CommandHandler, CallbackContext
@@ -25,6 +25,7 @@ logger.add(
 )
 
 # Load environment variables
+
 load_dotenv()
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
@@ -45,6 +46,18 @@ logger.info(
     f"BOT_TOKEN: {BOT_TOKEN}, CHAT_ID: {CHAT_ID_INNER}, METRICS_URL: {METRICS_URL},\n"
     f"TRON_TRX_WARNING: {TRON_TRX_WARNING}, TRON_ENERGY_WARNING: {TRON_ENERGY_WARNING}, TRON_NET_WARNING: {TRON_NET_WARNING},\n"
 )
+
+def update_envs():
+    load_dotenv()
+
+    global TRON_TRX_WARNING,TRON_ENERGY_WARNING,TRON_NET_WARNING,TRON_ENERGY_WARNING_RATIO,TRON_NET_WARNING_RATIO,TRON_BALANCE_WARNING_RATIO
+    # tron configs
+    TRON_TRX_WARNING = float(os.getenv("TRON_TRX_WARNING"))
+    TRON_ENERGY_WARNING = float(os.getenv("TRON_ENERGY_WARNING"))
+    TRON_NET_WARNING = float(os.getenv("TRON_NET_WARNING"))
+    TRON_ENERGY_WARNING_RATIO = float(os.getenv("TRON_ENERGY_WARNING_RATIO"))
+    TRON_NET_WARNING_RATIO = float(os.getenv("TRON_NET_WARNING_RATIO"))
+    TRON_BALANCE_WARNING_RATIO = float(os.getenv("TRON_BALANCE_WARNING_RATIO"))
 
 def get_resource_msg_simplified(res_dict):
     return (f" 能量剩余: {res_dict['energy_remain_ratio']} (约 {res_dict['estimated_trans_with_energy_with_activation']} - {res_dict['estimated_trans_with_energy_no_activation']} 笔交易) \n"
@@ -197,18 +210,34 @@ def recur_trx_notif():
     else:
         logger.info(f"cur min {minutes} and hour {hours} not match send timestamp, skipping...")
 
-async def alter_threshold_command(update: Update, context: CallbackContext) -> None:
+
+async def alter_energy_threshold_command(update: Update, context: CallbackContext) -> None:
     if not context.args:
         await update.message.reply_text("请提供阈值参数，例如：/al_en_th 0.5 代表将能量阈值预警比例改成50%")
         return
 
     try:
         new_energy_warning_ratio = float(context.args[0])
-        global TRON_ENERGY_WARNING_RATIO  # 假设需要修改全局阈值（根据实际需求调整）
-        TRON_ENERGY_WARNING_RATIO = new_energy_warning_ratio
-        await update.message.reply_text(f"能量警告比例阈值已更新为：{new_energy_warning_ratio}")
+        # 找到 .env 文件路径（自动查找当前目录）
+        env_path = find_dotenv()
+        if not env_path:
+            await update.message.reply_text("错误：未找到 .env 文件")
+            return
+
+        # 更新 .env 文件中的配置（注意：set_key 会覆盖原有值，不存在则新增）
+        set_key(env_path, "TRON_ENERGY_WARNING_RATIO", f"{new_energy_warning_ratio}")
+
+        # （可选）如果需要立即生效，重新加载环境变量到全局（根据你的代码结构调整）
+        load_dotenv(env_path, override=True)
+        global TRON_ENERGY_WARNING_RATIO
+        TRON_ENERGY_WARNING_RATIO = float(os.getenv("TRON_ENERGY_WARNING_RATIO"))  # 重新读取最新值
+
+        await update.message.reply_text(f"能量警告比例阈值已更新为：{'%.1f%%' % new_energy_warning_ratio}（已写入 .env 文件）")
+
     except ValueError:
-        await update.message.reply_text("参数错误：请输入有效的数字（例如 0.5, 代表将能量阈值预警比例改成50%）")
+        await update.message.reply_text("参数错误：请输入有效的数字（例如 0.5，代表50%）")
+    except Exception as e:
+        await update.message.reply_text(f"操作失败：{str(e)}")
 
 async def help_command(update: Update, context: CallbackContext) -> None:
     help_text = "以下是可用的命令:\n"
@@ -250,13 +279,14 @@ def run_bot():
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("st", trigger_hourly_stats_command))
     application.add_handler(CommandHandler("rs", handle_get_resource_command))
-    application.add_handler(CommandHandler("al_en_th", alter_threshold_command))  # 新增此行
+    application.add_handler(CommandHandler("al_en_th", alter_energy_threshold_command))  # 新增此行
     application.run_polling()
 
 def run_scheduler():
     """子进程：运行定时任务"""
     while True:
         try:
+            update_envs()
             recur_trx_notif()
         except Exception as e:
             import traceback
