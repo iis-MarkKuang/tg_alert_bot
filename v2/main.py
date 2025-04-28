@@ -232,7 +232,7 @@ async def alter_energy_threshold_command(update: Update, context: CallbackContex
         global TRON_ENERGY_WARNING_RATIO
         TRON_ENERGY_WARNING_RATIO = float(os.getenv("TRON_ENERGY_WARNING_RATIO"))  # 重新读取最新值
 
-        await update.message.reply_text(f"能量警告比例阈值已更新为：{'%.1f%%' % new_energy_warning_ratio}（已写入 .env 文件）")
+        await update.message.reply_text(f"能量警告比例阈值已更新为：{'%.9f%%' % (new_energy_warning_ratio * 100)}（已写入 .env 文件）")
 
     except ValueError:
         await update.message.reply_text("参数错误：请输入有效的数字（例如 0.5，代表50%）")
