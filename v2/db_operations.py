@@ -69,7 +69,9 @@ WITH api_key_mapping (api_key, company) AS (
         ('b486c3da-2f4e-4443-8dfe-775c9b15629b', 'Banexcoin'),
         ('58c04d51-727d-43b2-85a4-da95bfb0a3b5', 'BitAfrika'),
         ('60c360fc-e1b5-4c00-93b7-c00a9198a489', 'Alua'),
-        ('b737fd4d-15de-42b4-a6a0-9a206b910662', 'BitGate')
+        ('b737fd4d-15de-42b4-a6a0-9a206b910662', 'BitGate'),
+        ('03d4c82a-0896-48e9-8851-5a9ad2edc9c2', 'Atomic Wallet'),
+        ('3d622152-1cf7-4352-805c-5fbb30a6100d', 'Payouter')
 )
 """
 
