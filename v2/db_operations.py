@@ -71,7 +71,26 @@ WITH api_key_mapping (api_key, company) AS (
         ('60c360fc-e1b5-4c00-93b7-c00a9198a489', 'Alua'),
         ('b737fd4d-15de-42b4-a6a0-9a206b910662', 'BitGate'),
         ('03d4c82a-0896-48e9-8851-5a9ad2edc9c2', 'Atomic Wallet'),
-        ('3d622152-1cf7-4352-805c-5fbb30a6100d', 'Payouter')
+        ('3d622152-1cf7-4352-805c-5fbb30a6100d', 'Payouter'),
+        ('107f5718-11c1-4e29-a9c4-20390435e57d','Armcoinwallet'),
+        ('851adcbb-ad4d-45c6-87da-5a3c38fd67fe','SequoyaPay'),
+        ('5e02d433-2e36-4a35-bcbf-fe32c5be17f0','Kobbex'),
+        ('f187b074-7f7a-4a13-b435-f0ceb49934ea','Pixel'),
+        ('8fb6caa0-a496-478c-bc0e-0e87fd5894b8','hero'),
+        ('d4e22e20-f178-488b-ba1a-3117a48ee867','KObbex'),
+        ('679fa663-babe-4683-9f0f-d429344557ad','NOW'),
+        ('5b713c43-e5b0-44b1-9537-5b22ef95f9b5','MartianPay'),
+        ('b0faac21-704c-4b37-8766-4061ff96331f','Accelerator'),
+        ('3fb36ab6-82cc-476d-9161-4d97e53062e3','Billigans'),
+        ('f33ade31-76e0-423c-9ad6-7f4c788e96e6','tether'),
+        ('fd58f46e-6f73-483e-bc14-6fe2841b2bdf','Bitrace'),
+        ('f1277684-b267-4322-8c5e-f5154604fe97','energylink'),
+        ('d2c27313-71a5-49b2-8e49-acd3f2d15118','deppso'),
+        ('cb0f674b-1141-4e56-9d25-9c24b51eca7a','AK'),
+        ('242477f3-1739-4a57-b828-ff4bb2f03752','seek940'),
+        ('02c1094d-acc1-47d6-8837-677a5ef23a47','Bitcoin'),
+        ('a85a1bc3-3156-484d-8b52-654da6a97dc4','energyMarst'),
+        ('96e309b7-be0f-414a-babf-c14cc6a72da9','Auther')
 )
 """
 
