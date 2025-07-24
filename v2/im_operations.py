@@ -61,11 +61,3 @@ def send_slack_webhook_message(webhook_url: str, message: str):
     payload = {"text": message}
     response = requests.post(webhook_url, json=payload)
     response.raise_for_status()
-
-
-if __name__ == "__main__":
-    send_slack_message(
-        bot_token="xoxb-2185937878-9210919414386-ygxJV4IU4AZeRxguMUesC2tZ",
-        channel_id="C097670USVB",
-        message="Hello, world!"
-    )
