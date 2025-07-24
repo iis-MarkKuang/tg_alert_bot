@@ -203,7 +203,7 @@ def recur_trx_notif():
     check_resource_and_alert(resource_fields, ALERT_INTERVAL)
 
 
-    if minutes == 0:
+    if minutes == 0 and hours == 2:
         message = query_trans_and_add_info(resource_fields)
         send_telegram_message(BOT_TOKEN, CHAT_ID_INNER, message)
         recur_trx_notif.last_heartbeat_time = current_time
