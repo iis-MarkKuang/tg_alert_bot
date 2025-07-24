@@ -35,6 +35,7 @@ METRICS_URL = os.getenv("METRICS_URL")
 SLACK_BOT_TOKEN = os.getenv("SLACK_BOT_TOKEN")
 SLACK_CHANNEL_ID = os.getenv("SLACK_CHANNEL_ID")
 SLACK_WEBHOOK_URL = os.getenv("SLACK_WEBHOOK_URL")
+SLACK_MEMBER_UIDS = os.getenv("SLACK_MEMBER_UIDS")
 
 # tron configs
 TRON_TRX_WARNING = float(os.getenv("TRON_TRX_WARNING"))
@@ -112,7 +113,7 @@ def check_resource_and_alert(res_fields, alert_interval):
     if alert_messages:
         alert_text = "\n".join(alert_messages)
         send_telegram_message(BOT_TOKEN, CHAT_ID_INNER, alert_text)
-        send_slack_webhook_message(SLACK_WEBHOOK_URL, alert_text)
+        send_slack_webhook_message(SLACK_WEBHOOK_URL, alert_text, SLACK_MEMBER_UIDS)
 
         check_resource_and_alert.last_alert_time = current_time
         logger.info(f"Sent alert: {alert_text}")
