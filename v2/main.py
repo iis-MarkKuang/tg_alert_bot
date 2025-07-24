@@ -12,7 +12,7 @@ from telegram.ext import Application, CommandHandler, CallbackContext
 from db_operations import get_psql_conn, query_trx, query_addresses, query_last_day_trx_cnt_rank, \
     query_all_time_trx_cnt_rank
 from metrics_operations import get_top_qps_endpoint_data_tuple, get_resources_fields
-from im_operations import send_telegram_message
+from im_operations import send_telegram_message, send_slack_message
 
 # Configs
 logger.add(
@@ -196,12 +196,17 @@ def recur_trx_notif():
 
     current_time = time.time()
     local_time = time.localtime(current_time)
+
     minutes = local_time.tm_min
     hours = local_time.tm_hour
 
     resource_fields = get_resources_fields()
     check_resource_and_alert(resource_fields, ALERT_INTERVAL)
 
+    # TODO Scale this up to 10 minutes
+    if minutes % 5 == 0:
+        message = query_trans_and_add_info(resource_fields)
+        send_slack_message(SLACK_BOT_TOKEN, SLACK_CHANNEL_ID, message)
 
     if minutes == 0 and hours == 2:
         message = query_trans_and_add_info(resource_fields)
