@@ -61,3 +61,24 @@ def send_slack_webhook_message(webhook_url: str, message: str):
     payload = {"text": message}
     response = requests.post(webhook_url, json=payload)
     response.raise_for_status()
+
+
+if __name__ == "__main__":
+    # Option 1: Using bot token (requires proper scopes and valid token)
+    # send_slack_message(
+    #     bot_token="xoxb-2185937878-9210919414386-ygxJV4IU4AZeRxguMUesC2tZ",
+    #     channel_id="C097670USVB",
+    #     message="Hello, world!"
+    # )
+    
+    # Option 2: Using webhook URL (simpler and more reliable for alerts)
+    # To get a webhook URL:
+    # 1. Go to your Slack app settings
+    # 2. Go to "Incoming Webhooks" → "Activate Incoming Webhooks"
+    # 3. Click "Add New Webhook to Workspace"
+    # 4. Choose your channel
+    # 5. Copy the webhook URL
+    send_slack_webhook_message(
+        webhook_url="https://hooks.slack.com/services/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",  # Replace with your actual webhook URL
+        message="Hello, world!"
+    )

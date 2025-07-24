@@ -12,7 +12,7 @@ from telegram.ext import Application, CommandHandler, CallbackContext
 from db_operations import get_psql_conn, query_trx, query_addresses, query_last_day_trx_cnt_rank, \
     query_all_time_trx_cnt_rank
 from metrics_operations import get_top_qps_endpoint_data_tuple, get_resources_fields
-from im_operations import send_telegram_message, send_slack_message
+from im_operations import send_telegram_message, send_slack_message, send_slack_webhook_message
 
 # Configs
 logger.add(
@@ -34,6 +34,8 @@ CHAT_ID_EXP = os.getenv("CHAT_ID_EXP")
 METRICS_URL = os.getenv("METRICS_URL")
 SLACK_BOT_TOKEN = os.getenv("SLACK_BOT_TOKEN")
 SLACK_CHANNEL_ID = os.getenv("SLACK_CHANNEL_ID")
+SLACK_WEBHOOK_URL = os.getenv("SLACK_WEBHOOK_URL")
+
 # tron configs
 TRON_TRX_WARNING = float(os.getenv("TRON_TRX_WARNING"))
 TRON_ENERGY_WARNING = float(os.getenv("TRON_ENERGY_WARNING"))
@@ -110,7 +112,7 @@ def check_resource_and_alert(res_fields, alert_interval):
     if alert_messages:
         alert_text = "\n".join(alert_messages)
         send_telegram_message(BOT_TOKEN, CHAT_ID_INNER, alert_text)
-        send_slack_message(SLACK_BOT_TOKEN, SLACK_CHANNEL_ID, alert_text)
+        send_slack_webhook_message(SLACK_WEBHOOK_URL, alert_text)
 
         check_resource_and_alert.last_alert_time = current_time
         logger.info(f"Sent alert: {alert_text}")
