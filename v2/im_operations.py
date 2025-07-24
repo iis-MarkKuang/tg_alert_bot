@@ -59,7 +59,7 @@ def send_slack_webhook_message(webhook_url: str, message: str, slack_member_uids
     :param webhook_url: The Slack webhook URL.
     :param message: The message to send.
     """
-    message += f" 请帮忙处理 <{'> <'.join(slack_member_uids.split(','))}>"
+    message += f" 请帮忙处理 <@{'> <@'.join(slack_member_uids.split(','))}>"
 
     payload = {"text": message}
     
