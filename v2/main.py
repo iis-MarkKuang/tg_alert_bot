@@ -110,6 +110,8 @@ def check_resource_and_alert(res_fields, alert_interval):
     if alert_messages:
         alert_text = "\n".join(alert_messages)
         send_telegram_message(BOT_TOKEN, CHAT_ID_INNER, alert_text)
+        send_slack_message(SLACK_BOT_TOKEN, SLACK_CHANNEL_ID, alert_text)
+
         check_resource_and_alert.last_alert_time = current_time
         logger.info(f"Sent alert: {alert_text}")
 
@@ -203,10 +205,6 @@ def recur_trx_notif():
     resource_fields = get_resources_fields()
     check_resource_and_alert(resource_fields, ALERT_INTERVAL)
 
-    # TODO Scale this up to 10 minutes
-    if minutes % 5 == 0:
-        message = query_trans_and_add_info(resource_fields)
-        send_slack_message(SLACK_BOT_TOKEN, SLACK_CHANNEL_ID, message)
 
     if minutes == 0 and hours == 2:
         message = query_trans_and_add_info(resource_fields)
