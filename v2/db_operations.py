@@ -90,7 +90,11 @@ WITH api_key_mapping (api_key, company) AS (
         ('242477f3-1739-4a57-b828-ff4bb2f03752','seek940'),
         ('02c1094d-acc1-47d6-8837-677a5ef23a47','Bitcoin'),
         ('a85a1bc3-3156-484d-8b52-654da6a97dc4','energyMarst'),
-        ('96e309b7-be0f-414a-babf-c14cc6a72da9','Auther')
+        ('96e309b7-be0f-414a-babf-c14cc6a72da9','Auther'),
+        ('a6f4f4bd-0629-4f09-add2-01480f6e5dc7','CoinRocket'),
+        ('a2e003ca-dd2d-4e36-b1e7-348e2630f74f','Onboard Wallet'),
+        ('0377347a-a9fa-4c88-b189-b79551e82b11','Richamster'),
+        ('a977131c-0c5f-4653-9cf3-438c2b5ec924','Tether WDK')
 )
 """
 

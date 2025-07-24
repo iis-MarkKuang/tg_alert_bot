@@ -12,7 +12,7 @@ from telegram.ext import Application, CommandHandler, CallbackContext
 from db_operations import get_psql_conn, query_trx, query_addresses, query_last_day_trx_cnt_rank, \
     query_all_time_trx_cnt_rank
 from metrics_operations import get_top_qps_endpoint_data_tuple, get_resources_fields
-from telegram_operations import send_telegram_message
+from im_operations import send_telegram_message
 
 # Configs
 logger.add(
@@ -32,6 +32,8 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 CHAT_ID_INNER = os.getenv("CHAT_ID_INNER")
 CHAT_ID_EXP = os.getenv("CHAT_ID_EXP")
 METRICS_URL = os.getenv("METRICS_URL")
+SLACK_BOT_TOKEN = os.getenv("SLACK_BOT_TOKEN")
+SLACK_CHANNEL_ID = os.getenv("SLACK_CHANNEL_ID")
 # tron configs
 TRON_TRX_WARNING = float(os.getenv("TRON_TRX_WARNING"))
 TRON_ENERGY_WARNING = float(os.getenv("TRON_ENERGY_WARNING"))
