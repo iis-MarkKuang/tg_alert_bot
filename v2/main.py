@@ -9,7 +9,7 @@ from loguru import logger
 from telegram import Update
 from telegram.ext import Application, CommandHandler, CallbackContext
 
-from db_operations import get_psql_conn, query_trx, query_addresses, query_last_day_trx_cnt_rank, \
+from db_operations import get_psql_conn, query_transactions_info, query_addresses_count_by_transactions_count, query_last_day_trx_cnt_rank, \
     query_all_time_trx_cnt_rank
 from metrics_operations import get_top_qps_endpoint_data_tuple, get_resources_fields
 from im_operations import send_telegram_message, send_slack_message, send_slack_webhook_message
@@ -128,18 +128,18 @@ def query_trans_and_add_info(resource_fields):
         genesis_datetime = '2025-03-04T00:00:00'
         connection = get_psql_conn()
 
-        one_day_new_trx_count = query_trx(connection, minus_one_day_datetime, now_datetime, 'count', None, None, None)
-        one_day_new_trx_count_new_address = query_trx(connection, minus_one_day_datetime, now_datetime, 'count', None, None, None, True)
-        one_day_failure_trx_count = query_trx(connection, minus_one_day_datetime, now_datetime, 'count', 'FAILED', None, None)
-        one_day_failure_trx_count_new_address = query_trx(connection, minus_one_day_datetime, now_datetime, 'count', 'FAILED', None, None, True)
-        one_day_new_gte50_usdt_trx_count_new_address = query_trx(connection, minus_one_day_datetime, now_datetime, 'count', None, 50000000, True, True)
-        all_time_trx_count = query_trx(connection, genesis_datetime, now_datetime, 'count', None, None, None)
-        all_time_trx_failure_count = query_trx(connection, genesis_datetime, now_datetime, 'count', 'FAILED', None, None)
-        all_time_trx_amount = format(query_trx(connection, genesis_datetime, now_datetime, 'amount', 'SUCCEED', None, None) / 1000000, ',.2f')
+        one_day_new_trx_count = query_transactions_info(connection, minus_one_day_datetime, now_datetime, 'count', None, None, None)
+        one_day_new_trx_count_new_address = query_transactions_info(connection, minus_one_day_datetime, now_datetime, 'count', None, None, None, True)
+        one_day_failure_trx_count = query_transactions_info(connection, minus_one_day_datetime, now_datetime, 'count', 'FAILED', None, None)
+        one_day_failure_trx_count_new_address = query_transactions_info(connection, minus_one_day_datetime, now_datetime, 'count', 'FAILED', None, None, True)
+        one_day_new_gte50_usdt_trx_count_new_address = query_transactions_info(connection, minus_one_day_datetime, now_datetime, 'count', None, 50000000, True, True)
+        all_time_trx_count = query_transactions_info(connection, genesis_datetime, now_datetime, 'count', None, None, None)
+        all_time_trx_failure_count = query_transactions_info(connection, genesis_datetime, now_datetime, 'count', 'FAILED', None, None)
+        all_time_trx_amount = format(query_transactions_info(connection, genesis_datetime, now_datetime, 'amount', 'SUCCEED', None, None) / 1000000, ',.2f')
         one_day_gte_50_ratio = '%.1f%%' % (one_day_new_gte50_usdt_trx_count_new_address / one_day_new_trx_count * 100) if one_day_new_trx_count > 0 else 0.0
         one_day_gte_50_ratio_new_address = '%.1f%%' % (one_day_new_gte50_usdt_trx_count_new_address / one_day_new_trx_count_new_address * 100) if one_day_new_trx_count_new_address > 0 else 0.0
-        one_day_trx_amount = format(query_trx(connection, minus_one_day_datetime, now_datetime, 'FAILED', 'SUCCEED', None, None) / 1000000, ',.2f')
-        one_day_trx_amount_new_address = format(query_trx(connection, minus_one_day_datetime, now_datetime, 'FAILED', 'SUCCEED', None, None, True) / 1000000, ',.2f')
+        one_day_trx_amount = format(query_transactions_info(connection, minus_one_day_datetime, now_datetime, 'FAILED', 'SUCCEED', None, None) / 1000000, ',.2f')
+        one_day_trx_amount_new_address = format(query_transactions_info(connection, minus_one_day_datetime, now_datetime, 'FAILED', 'SUCCEED', None, None, True) / 1000000, ',.2f')
 
         all_time_third_party_trx_res = query_all_time_trx_cnt_rank(connection)
         all_time_third_party_trx_res_list = [f"   公司: {row[1]}, 交易数: {row[2]}, 交易金额: {format(float(row[3]) / 1000000, ',.2f')}\n" for row in all_time_third_party_trx_res]
@@ -151,11 +151,11 @@ def query_trans_and_add_info(resource_fields):
 
         resource_message = get_resource_msg_simplified(resource_fields)
 
-        all_addresses_count = query_addresses(connection, 0, 10000000000)
-        gte50_addresses_count = query_addresses(connection, 50, 10000000000)
-        gte10_lt50_addresses_count = query_addresses(connection, 10, 50)
-        gte5_lt10_addresses_count = query_addresses(connection, 5, 10)
-        gte0_lt5_addresses_count = query_addresses(connection, 0, 5)
+        all_addresses_count = query_addresses_count_by_transactions_count(connection, 0, 10000000000)
+        gte50_addresses_count = query_addresses_count_by_transactions_count(connection, 50, 10000000000)
+        gte10_lt50_addresses_count = query_addresses_count_by_transactions_count(connection, 10, 50)
+        gte5_lt10_addresses_count = query_addresses_count_by_transactions_count(connection, 5, 10)
+        gte0_lt5_addresses_count = query_addresses_count_by_transactions_count(connection, 0, 5)
         gte50_address_ratio = '%.1f%%' % (gte50_addresses_count / all_addresses_count * 100) if all_addresses_count > 0 else 0.0
         gte10_lt50_address_ratio = '%.1f%%' % (gte10_lt50_addresses_count / all_addresses_count * 100) if all_addresses_count > 0 else 0.0
         gte5_lt10_add_ratio = '%.1f%%' % (gte5_lt10_addresses_count / all_addresses_count * 100) if all_addresses_count > 0 else 0.0

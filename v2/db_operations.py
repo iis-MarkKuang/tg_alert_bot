@@ -22,7 +22,7 @@ def execute_query(connection, query):
         if cursor:
             cursor.close()
 
-def query_trx(connection, start_time, end_time, agg_type, state=None, bound=None, gt=None, address_relate=False):
+def query_transactions_info(connection, start_time, end_time, agg_type, state=None, bound=None, gt=None, address_relate=False):
     query_column = 'count(go.amount)' if agg_type == 'count' else 'sum(go.amount)'
     state_query = ""
     if state is not None:
@@ -36,7 +36,8 @@ def query_trx(connection, start_time, end_time, agg_type, state=None, bound=None
     results = execute_query(connection, query)
     return results[0][0] if results else 0
 
-def query_addresses(connection, lower_bound, upper_bound):
+## query the number of addresses that have transactions count between lower_bound and upper_bound
+def query_addresses_count_by_transactions_count(connection, lower_bound, upper_bound):
     query = (f"""
         SELECT COUNT(*) 
         FROM (
