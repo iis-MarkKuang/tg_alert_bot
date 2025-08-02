@@ -112,7 +112,7 @@ def check_resource_and_alert(res_fields, alert_interval):
 
     if alert_messages:
         alert_text = "\n".join(alert_messages)
-        send_telegram_message(BOT_TOKEN, CHAT_ID_INNER, alert_text)
+        # send_telegram_message(BOT_TOKEN, CHAT_ID_INNER, alert_text)
         if 'trx' in alert_text.lower():
             send_slack_webhook_message(SLACK_WEBHOOK_URL, alert_text, SLACK_MEMBER_UIDS)
 
