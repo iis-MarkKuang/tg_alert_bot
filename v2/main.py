@@ -45,6 +45,15 @@ TRON_ENERGY_WARNING_RATIO = float(os.getenv("TRON_ENERGY_WARNING_RATIO"))
 TRON_NET_WARNING_RATIO = float(os.getenv("TRON_NET_WARNING_RATIO"))
 TRON_BALANCE_WARNING_RATIO = float(os.getenv("TRON_BALANCE_WARNING_RATIO"))
 
+# last alert variables
+LAST_ALERT_TRX_COUNT = -1
+# if last trx count - current count <= this thres, then no alert
+LAST_TRX_DIFF_THRES = 3000
+# last alert variables
+LAST_ALERT_TRX_COUNT = -1
+# if last trx count - current count <= this thres, then no alert
+LAST_TRX_DIFF_THRES = 3000
+
 ALERT_INTERVAL = 600
 
 logger.info(
@@ -94,11 +103,20 @@ def check_resource_and_alert(res_fields, alert_interval):
         return
 
     alert_messages = []
-
+    global LAST_ALERT_TRX_COUNT
     if res_fields['balance_float'] < TRON_TRX_WARNING:
-        alert_messages.append(
-            f"⚠️ TRX余额不足! 当前TRX: {res_fields['balance_float']:.3f}, 警告阈值: {TRON_TRX_WARNING}"
-        )
+
+        # initial read
+        if LAST_ALERT_TRX_COUNT == -1:
+            LAST_ALERT_TRX_COUNT = res_fields['balance_float']
+
+        if LAST_ALERT_TRX_COUNT - res_fields['balance_float'] < LAST_TRX_DIFF_THRES:
+            pass
+        else:
+            LAST_ALERT_TRX_COUNT = res_fields['balance_float']
+            alert_messages.append(
+                f"⚠️ TRX余额不足! 当前TRX: {res_fields['balance_float']:.3f}, 警告阈值: {TRON_TRX_WARNING}"
+            )
 
     if res_fields['energy_remaining_ratio_float'] < TRON_ENERGY_WARNING_RATIO:
         alert_messages.append(
