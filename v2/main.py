@@ -46,11 +46,11 @@ TRON_NET_WARNING_RATIO = float(os.getenv("TRON_NET_WARNING_RATIO"))
 TRON_BALANCE_WARNING_RATIO = float(os.getenv("TRON_BALANCE_WARNING_RATIO"))
 
 # last alert variables
-LAST_ALERT_TRX_COUNT = -1
+LAST_READ_TRX_COUNT = -1
 # if last trx count - current count <= this thres, then no alert
 LAST_TRX_DIFF_THRES = 3000
 # last alert variables
-LAST_ALERT_TRX_COUNT = -1
+LAST_READ_TRX_COUNT = -1
 # if last trx count - current count <= this thres, then no alert
 LAST_TRX_DIFF_THRES = 3000
 
@@ -103,17 +103,21 @@ def check_resource_and_alert(res_fields, alert_interval):
         return
 
     alert_messages = []
-    global LAST_ALERT_TRX_COUNT
+    global LAST_READ_TRX_COUNT
+
+    # initial read
+    if LAST_READ_TRX_COUNT == -1:
+        LAST_READ_TRX_COUNT = res_fields['balance_float']
+
+    # WARNING trigger base condition
     if res_fields['balance_float'] < TRON_TRX_WARNING:
 
-        # initial read
-        if LAST_ALERT_TRX_COUNT == -1:
-            LAST_ALERT_TRX_COUNT = res_fields['balance_float']
-
-        if LAST_ALERT_TRX_COUNT - res_fields['balance_float'] < LAST_TRX_DIFF_THRES:
+        # if the diff between 2 reads during warning period is smaller than trx diff threshold, no
+        if LAST_READ_TRX_COUNT - res_fields['balance_float'] < LAST_TRX_DIFF_THRES:
+            logger.info(f"last read trx count is {LAST_READ_TRX_COUNT}, not exceeding diff threshold (cur read: {res_fields['balance_float']}), skipping trx warning...")
             pass
         else:
-            LAST_ALERT_TRX_COUNT = res_fields['balance_float']
+            LAST_READ_TRX_COUNT = res_fields['balance_float']
             alert_messages.append(
                 f"⚠️ TRX余额不足! 当前TRX: {res_fields['balance_float']:.3f}, 警告阈值: {TRON_TRX_WARNING}"
             )
